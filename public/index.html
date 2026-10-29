@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ko">
+<head>
+ <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+ <meta name="description" content="공식 근거를 확인하고, 종합소득세 가정에 따른 세액 변화를 비교하세요. 2025년 귀속 검토용 체험판.">
+ <meta name="theme-color" content="#2670eb"><title>JS Tax Agent · 근거로 이해하는 세금</title>
+ <link rel="icon" type="image/svg+xml" href="./favicon.svg"><link rel="stylesheet" href="./style.css"><script type="module" src="./app.mjs"></script>
+</head>
+<body>
+ <a class="skip-link" href="#main">본문으로 이동</a>
+ <aside class="sidebar">
+  <a class="brand" href="#ask" aria-label="JS Tax Agent 질문하기"><img src="./favicon.svg" alt="" width="38" height="38"><span>JS Tax Agent<small>근거로 이해하는 세금</small></span></a>
+  <div class="workspace-label">MY TAX WORKSPACE <span>초기 버전</span></div>
+  <nav aria-label="주요 메뉴">
+   <a href="#ask" data-view="ask" aria-current="page"><span class="nav-icon" aria-hidden="true">◫</span> 세금 질문하기</a>
+   <a href="#compare" data-view="compare"><span class="nav-icon" aria-hidden="true">⇄</span> 세액 비교하기</a>
+   <a href="#sources" data-view="sources"><span class="nav-icon" aria-hidden="true">▤</span> 근거 보관함 <span class="count">5</span></a>
+  </nav>
+  <div class="sidebar-note"><span class="small-icon" aria-hidden="true">✓</span><strong>판단의 시작은, 정확한 근거</strong><p>국세청 안내와 법령의 출처를<br>답변과 함께 확인하세요.</p><a href="#sources">수록 자료 살펴보기 <span aria-hidden="true">↗</span></a></div>
+  <div class="sidebar-bottom"><span class="avatar">JS</span><div>나의 세금 워크스페이스<small>로그인 없이 사용해요</small></div></div>
+ </aside>
+ <div class="shell">
+ <header class="topbar"><span id="breadcrumb">워크스페이스 <span aria-hidden="true">/</span> 세금 질문하기</span><span class="top-status"><i></i> 공식 자료 기반 <span class="version">v0.1</span></span></header>
+ <main id="main" tabindex="-1">
+  <section id="view-ask" aria-labelledby="ask-title">
+   <div class="intro"><div class="eyebrow"><span class="dot"></span> 종합소득세 · 2025년 귀속</div><h1 id="ask-title" tabindex="-1">세금 고민,<br>근거부터 차근차근.</h1><p>궁금한 내용을 물어보고, 조건에 따른 세액 변화까지 살펴보세요.</p></div>
+   <div class="ask-layout">
+    <div class="ask-main">
+     <form id="question-form" class="question-card" novalidate>
+      <div class="card-heading"><span class="square-icon" aria-hidden="true">✦</span><h2>어떤 점이 궁금하세요?</h2><span class="badge">근거 검색</span></div>
+      <label class="sr-only" for="question">종합소득세 질문</label>
+      <textarea id="question" name="question" rows="4" maxlength="2100" placeholder="예: 필요경비는 어떤 기준으로 인정되나요?" aria-describedby="question-help question-error"></textarea>
+      <div class="question-meta"><span id="question-help">이름·주민등록번호 등 개인정보는 빼 주세요.</span><span id="char-count">0 / 2,000</span></div>
+      <p id="question-error" class="error" role="alert" hidden></p>
+      <div class="form-footer"><button id="clear-question" type="button" class="text-button">질문 지우기</button><div class="ask-buttons"><button id="ask-ai" type="button" class="button secondary" hidden>생성 AI로 답변 보기</button><button id="ask-submit" type="submit" class="button primary">근거로 답변 보기 <span aria-hidden="true">↗</span></button></div></div>
+      <p id="ai-notice" class="ai-notice" hidden>생성 AI 버튼을 누르면 질문과 검색된 근거 요약이 OpenAI로 전송돼요. 금액 입력은 전송하지 않아요.</p>
+     </form>
+     <div class="suggestions"><span>이렇게 시작해 보세요</span><div><button data-question="필요경비는 어떤 기준으로 인정되나요?">필요경비 인정 기준 <span aria-hidden="true">↗</span></button><button data-question="2025년 종합소득세 세율은 어떻게 되나요?">2025년 기본세율 <span aria-hidden="true">↗</span></button><button data-question="산출세액과 납부세액은 어떻게 다른가요?">산출세액과 납부세액 <span aria-hidden="true">↗</span></button></div></div>
+     <section id="answer" class="answer-card" aria-live="polite" hidden></section>
+     <div class="bento">
+      <a href="#compare" class="feature-card blue-card"><div><span class="eyebrow">같은 수입, 다른 가정</span><h2>경비가 달라지면<br>세금은 얼마나 달라질까요?</h2><p>기준안과 비교안을 나란히 확인해요.</p><span class="feature-action">세액 비교하기 <span aria-hidden="true">→</span></span></div><div class="mini-chart" aria-hidden="true"><span></span><span></span><i>−</i></div></a>
+      <div class="feature-card white-card"><span class="warm-icon" aria-hidden="true">▤</span><h2>답변 옆에,<br>확인할 수 있는 출처</h2><p>국세청 안내·법령 5개 자료를<br>직접 열어 살펴볼 수 있어요.</p><a href="#sources" class="feature-action">근거 보관함 보기 <span aria-hidden="true">→</span></a></div>
+     </div>
+    </div>
+    <aside class="guide-card" aria-labelledby="guide-title"><div class="guide-top"><span class="guide-icon" aria-hidden="true">⌁</span><span>HOW IT WORKS</span></div><h2 id="guide-title">복잡한 세금도<br>한 단계씩 이해해요</h2><ol class="steps"><li><span>1</span><div><strong>상황을 질문해요</strong><p>귀속연도와 궁금한 내용을<br>편하게 적어 주세요.</p></div></li><li><span>2</span><div><strong>공식 근거를 확인해요</strong><p>검색된 자료의 요약과<br>원문을 함께 살펴봐요.</p></div></li><li><span>3</span><div><strong>가정을 바꿔 비교해요</strong><p>입력한 경비와 공제에 따른<br>산출세액 차이를 확인해요.</p></div></li></ol><div class="guide-foot"><span aria-hidden="true">ⓘ</span> 현재는 국세청 안내의 요약 검색을 제공해요. 개별 질의회신·판례는 수록 전이에요.</div></aside>
+   </div>
+  </section>
+  <section id="view-compare" aria-labelledby="compare-title" hidden>
+   <div class="intro compact"><div class="eyebrow"><span class="dot"></span> 종합소득세 · 2025년 귀속</div><h1 id="compare-title" tabindex="-1">가정이 바뀌면,<br>세액도 달라져요.</h1><p>사업소득의 필요경비와 소득공제를 바꿔 산출세액을 비교하세요.</p></div>
+   <div class="scope-banner"><strong>2025년 · 장부에 의한 단일 사업소득</strong><span>지방소득세·세액공제·감면·가산세·기납부세액은 제외해요. 실제 납부액과 달라요.</span></div>
+   <form id="compare-form" novalidate><div class="compare-toolbar"><span>금액 단위: 원 · 공제 인정 여부는 별도 검토</span><button id="load-example" type="button" class="text-button">예시값 불러오기</button></div><div class="scenario-grid">
+    <fieldset class="scenario"><legend>기준안 <span>A</span></legend><p>현재 검토하고 있는 조건이에요.</p><label for="a-revenue">연간 총수입 <span>원</span></label><input id="a-revenue" inputmode="numeric" value="80000000" aria-describedby="a-revenue-help compare-error"><small id="a-revenue-help" class="amount-help"></small><label for="a-expenses">필요경비 <span>원</span></label><input id="a-expenses" inputmode="numeric" value="20000000" aria-describedby="a-expenses-help compare-error"><small id="a-expenses-help" class="amount-help"></small><label for="a-deductions">소득공제 합계 <span>원</span></label><input id="a-deductions" inputmode="numeric" value="1500000" aria-describedby="a-deductions-help compare-error"><small id="a-deductions-help" class="amount-help"></small></fieldset>
+    <fieldset class="scenario alternative"><legend>비교안 <span>B</span></legend><p>달리 적용해 볼 조건을 입력하세요.</p><label for="b-revenue">연간 총수입 <span>원</span></label><input id="b-revenue" inputmode="numeric" value="80000000" aria-describedby="b-revenue-help compare-error"><small id="b-revenue-help" class="amount-help"></small><label for="b-expenses">필요경비 <span>원</span></label><input id="b-expenses" inputmode="numeric" value="30000000" aria-describedby="b-expenses-help compare-error"><small id="b-expenses-help" class="amount-help"></small><label for="b-deductions">소득공제 합계 <span>원</span></label><input id="b-deductions" inputmode="numeric" value="1500000" aria-describedby="b-deductions-help compare-error"><small id="b-deductions-help" class="amount-help"></small></fieldset>
+   </div><div class="compare-submit"><p id="compare-error" class="error" role="alert" hidden></p><p id="compare-state" class="muted">예시값이에요. 본인 조건에 맞게 수정한 뒤 비교해 주세요.</p><button class="button primary" type="submit">세액 비교하기 <span aria-hidden="true">→</span></button></div></form>
+   <section id="comparison-result" aria-live="polite" hidden></section>
+   <details class="rules"><summary>계산 범위와 2025년 기본세율 확인하기</summary><p>과세표준 = max(0, 총수입 − 필요경비 − 소득공제). 산출세액 = 과세표준 × 세율 − 누진공제(원 미만 버림). 공제액은 적격 요건을 충족한 금액으로 직접 입력하세요. 기본공제를 자동 인정하지 않아요.</p><p>결손금·추계신고·근로소득 등 다른 소득·특례는 지원하지 않아요. 입력한 경비/공제가 실제 인정되는지는 이 계산으로 판단할 수 없어요.</p><div id="rates-table"></div><a href="https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=7667&amp;mi=2227" target="_blank" rel="noopener noreferrer">국세청 세율 원문 보기 ↗</a></details>
+  </section>
+  <section id="view-sources" aria-labelledby="sources-title" hidden>
+   <div class="intro compact"><div class="eyebrow"><span class="dot"></span> SOURCE LIBRARY</div><h1 id="sources-title" tabindex="-1">근거를 열면,<br>판단이 더 선명해져요.</h1><p>출처와 적용 시점을 확인하고 원문에서 한 번 더 검토하세요.</p></div>
+   <div class="library-toolbar"><div><strong>공식 자료 <span class="blue">5</span></strong><small>확인일 2026.10.29 · 실시간 갱신 전</small></div><div class="search-field"><label for="source-search">자료 검색</label><input id="source-search" type="search" placeholder="경비, 세율, 신고…"></div></div>
+   <p class="library-notice">국세청 안내 4개와 법령 1개를 수록했어요. 2026년 시행 법령은 보관함에서 참고할 수 있으며 2025년 답변 검색에서는 제외해요.</p><div id="source-list" aria-live="polite"></div>
+  </section>
+  <footer><span>JS Tax Agent <span class="footer-dot">·</span> 더 나은 판단을 위한 첫걸음</span><span>검토용 체험판 · 최종 신고 전 원문과 전문가 확인이 필요해요.</span></footer>
+ </main></div>
+</body></html>
