@@ -2,6 +2,8 @@
 
 공식 근거를 확인하고 종합소득세의 가정에 따른 산출세액을 비교하는 한국어 웹 앱입니다. **2025년 귀속, 장부에 의한 단일 사업소득 검토용 첫 버전**입니다.
 
+[GitHub 저장소](https://github.com/JoonseokWon/js-tax-agent) · [호스팅 체험판](https://js-tax-agent.keengiant19.chatgpt.site) (소유자 개인 접근 권한)
+
 ![데스크톱 세액 비교](docs/screenshots/desktop-comparison.jpg)
 
 ## 실행
