@@ -24,6 +24,12 @@ try{
   const data=await api(`/repos/${user.login}/${repo}/releases`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tag_name:tag,name:'JS Tax Agent '+tag,body:await readFile(bodyFile,'utf8'),draft:false,prerelease:true})});
   for(const asset of assets){const filename=asset.replaceAll('\\','/').split('/').at(-1);const r=await fetch(data.upload_url.split('{')[0]+'?name='+encodeURIComponent(filename),{method:'POST',headers:{...headers,'Content-Type':'application/octet-stream'},body:await readFile(asset)});if(!r.ok)throw new Error(`릴리스 자산 업로드 실패: ${r.status}`);const a=await r.json();console.log(JSON.stringify({asset:a.name,size:a.size,url:a.browser_download_url}));}
   console.log(JSON.stringify({url:data.html_url,tag:data.tag_name,prerelease:data.prerelease}));
+ }else if(action==='notes'){
+  const[tag,bodyFile]=args;
+  if(!tag||!bodyFile)throw new Error('릴리스 태그와 본문 파일이 필요합니다.');
+  const release=await api(`/repos/${user.login}/${repo}/releases/tags/${encodeURIComponent(tag)}`);
+  const updated=await api(`/repos/${user.login}/${repo}/releases/${release.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({body:await readFile(bodyFile,'utf8')})});
+  console.log(JSON.stringify({url:updated.html_url,tag:updated.tag_name,notes_updated:true}));
  }else if(action==='check'){
   const repository=await api(`/repos/${user.login}/${repo}`);const release=await api(`/repos/${user.login}/${repo}/releases/latest`).catch(()=>null);const releases=release?[release]:await api(`/repos/${user.login}/${repo}/releases`);
   console.log(JSON.stringify({url:repository.html_url,private:repository.private,branch:repository.default_branch,releases:releases.map(r=>({url:r.html_url,tag:r.tag_name,assets:r.assets.map(a=>({name:a.name,size:a.size}))}))}));
