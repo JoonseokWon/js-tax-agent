@@ -18,6 +18,8 @@
 
 `node scripts/build.mjs` → `dist/` 정상 생성, 앱 자산 8개와 빌드 manifest 1개.
 
+실행 ZIP을 새 폴더 `outputs/package-check/js-tax-agent-v0.1.0`에 압축 해제한 뒤 `node --test` → **17개 재통과**. 개발 디렉터리의 비공개 설정 없이 실행 가능한 패키지임을 확인했다.
+
 ## 실제 브라우저 검증
 
 로컬 서버: `http://127.0.0.1:4317`. 화면 크기 1440×1000, 390×844.
@@ -56,4 +58,13 @@
 - 실제 OpenAI API 실호출과 세무 전문가의 답변 품질 평가는 미검증. API 계약 테스트는 실호출을 대신하지 않음.
 - 전체 웹 접근성 표준 충족, 스크린리더/다른 브라우저/실물 모바일 기기는 미검증.
 - 2025년 당시 법령과 개별 국세청 질의회신은 미수록. 전 세목/모든 세법 사안을 해결하는 서비스가 아님.
-- GitHub Actions 원격 실행과 공개 릴리스는 소스 push 후 확인 필요.
+- Sites 배포 후 인증 게이트까지만 브라우저 확인. 인증 뒤 호스팅 화면의 기능은 별도 미검증(로컬 동일 자산 검증 완료).
+
+## 배포·공개 결과
+
+- 공개 저장소 `https://github.com/JoonseokWon/js-tax-agent`의 private=false를 인증 없는 GitHub REST 조회로 확인.
+- 공개 프리릴리스 `https://github.com/JoonseokWon/js-tax-agent/releases/tag/v0.1.0`, draft=false/prerelease=true. 앱 브라우저에서도 제목과 태그/커밋 확인.
+- 실행 ZIP 289,732바이트와 SHA256SUMS 91바이트 업로드. 인증 없이 실제 ZIP 다운로드 후 SHA-256 `44527f4de1ec281bded6a007a9da996c89294547825b34fea5f0a4828f95d669` 일치.
+- GitHub Actions `40812207475`, `40812160308` 모두 completed/success, 커밋 `096caf3c6052afca2f964ef5871f4f943ae5cad3`.
+- Sites 배포 `appgdep_6ae2bc6cca98819196839ce2cad8e70d`: succeeded, `https://js-tax-agent.keengiant19.chatgpt.site`. 기본 개인 접근 유지, ChatGPT 로그인 필요.
+- 상위 디렉터리에는 프로젝트 파일을 추가하지 않았고, 비밀키·개인 질문·실제 신고 자료는 커밋/릴리스에 포함하지 않았다.

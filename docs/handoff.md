@@ -5,7 +5,7 @@
 - UI·UX 적용 여부: 적용 / 화면 있음.
 - 2025년 귀속 종합소득세의 근거 검색·요약, 단일 사업소득 가정별 산출세액 비교, 메모 다운로드를 구현했다.
 - 새 프로젝트 폴더와 전용 Git 저장소에 격리했으며 기존 메일 자동화 등 다른 프로젝트는 수정하지 않았다.
-- 자동 테스트 17개와 데스크톱/모바일 실제 화면 검증 완료. Sites 배포 성공, GitHub 공개 저장소 생성 완료. 릴리스 게시 결과는 아래 배포 기록에 갱신한다.
+- 자동 테스트 17개와 데스크톱/모바일 실제 화면 검증 완료. Sites 배포 성공, GitHub 공개 소스와 v0.1.0 프리릴리스 게시 및 자산 검증 완료.
 
 ## 완료한 작업
 
@@ -41,10 +41,9 @@ Node 22.9 이상. `.env.example`을 `.env`로 복사해 키/모델을 설정하�
 
 ## 남은 작업과 다음 행동
 
-1. 생성한 공개 `JoonseokWon/js-tax-agent` 저장소에 검증된 소스를 올리고 v0.1.0 프리릴리스와 실행 ZIP·SHA256을 게시·검증한다.
-2. 실제 API 키로 생성 답변의 정확성·인용 충실도·실패 복구를 평가한다.
-3. 2025년 당시 법령/부칙과 국세청 질의회신·예규·판례를 문서번호와 원문 중심으로 수록한다. 임베딩 검색과 질문 평가 세트를 추가한다.
-4. 2026년 이후 세액 규칙과 세액공제·지방소득세는 별도 검증 후 확장한다.
+1. 실제 API 키로 생성 답변의 정확성·인용 충실도·실패 복구를 평가한다.
+2. 2025년 당시 법령/부칙과 국세청 질의회신·예규·판례를 문서번호와 원문 중심으로 수록한다. 임베딩 검색과 질문 평가 세트를 추가한다.
+3. 2026년 이후 세액 규칙과 세액공제·지방소득세는 별도 검증 후 확장한다.
 
 ## 실패한 접근과 확인된 원인
 
@@ -52,11 +51,17 @@ Node 22.9 이상. `.env.example`을 `.env`로 복사해 키/모델을 설정하�
 - 샌드박스 계정의 Git Credential Manager에는 GitHub 인증이 없어 최초 probe가 실패했다. 일반 Windows 사용자 계정에는 기존 인증이 있었고, 승인된 실행 환경에서 같은 GitHub 사용자 `JoonseokWon`임을 확인하여 추가 로그인 없이 저장소 생성에 성공했다. 인증값은 메모리에서만 사용했다.
 - Sites 첫 소스 업로드는 샌드박스 네트워크 차단으로 실패. 일반 계정에서는 새 Git 폴더 소유자 차이로 Git 검사가 막혔다. 이 프로젝트의 절대 경로만 해당 프로세스의 safe.directory로 지정하여 성공했다. 전역 설정은 바꾸지 않았다.
 - Sites 아카이브 도구는 임의 release/ 위치를 받지 않아, 도구가 지원하는 프로젝트 내부의 무시된 outputs/ 경로로 수정했다.
+- GitHub 태그 첫 push에서 원격 `fatal error in commit_refs` 발생. 원격 main 성공·태그 미등록을 확인한 뒤 태그만 재시도하여 성공. 코드/검사 기준을 변경하지 않았다.
 - 법령센터의 2025년 날짜 지정 URL을 도구로 읽을 수 없어 2025 적용 검증 완료로 처리하지 않았다. 확인 가능한 2026년 원문은 참고 자료로만 수록했다.
 
 ## 배포 기록
 
 - Sites 프로젝트: `appgprj_6ae2b6df48a881919a4d6293c682de23`. `.openai/hosting.json`의 ID를 재사용한다.
 - Sites: https://js-tax-agent.keengiant19.chatgpt.site · 배포 `appgdep_6ae2bc6cca98819196839ce2cad8e70d`, 상태 succeeded. 소스 `7987dac5229874e5116f4021e810b7c2dde228ef`, 기본 개인 접근 유지.
-- GitHub: https://github.com/JoonseokWon/js-tax-agent · private=false 생성 확인. 소스 push와 Release 게시를 이어서 수행한다.
-- 로컬 실행 서버는 배포 검증 종료 시 정리한다. 사용자는 README 명령으로 다시 실행할 수 있다.
+- GitHub: https://github.com/JoonseokWon/js-tax-agent · private=false, 소스 push 완료.
+- Release: https://github.com/JoonseokWon/js-tax-agent/releases/tag/v0.1.0 · draft=false, prerelease=true, 태그 커밋 `096caf3c6052afca2f964ef5871f4f943ae5cad3`.
+- 자산: `js-tax-agent-v0.1.0.zip` 289,732바이트와 `SHA256SUMS.txt`. 로그인 없는 공개 다운로드 후 로컬 원본 SHA-256 일치 확인. ZIP을 프로젝트 outputs/package-check/에 새로 풀어 테스트 17개 재통과.
+- 원격 CI: https://github.com/JoonseokWon/js-tax-agent/actions/runs/40812207475 · completed/success, 태그 커밋 일치.
+- Sites 실제 접속은 ChatGPT 로그인 게이트를 표시. 배포 도구의 succeeded를 확인했으며 인증 뒤 호스팅 화면의 별도 기능 검증은 수행하지 않았다. 로컬 화면 검증은 완료했다.
+- 로컬 QA 서버는 종료했다. 사용자는 README 명령으로 다시 실행할 수 있다.
+- 마지막 main 커밋은 릴리스 게시 후 실제 결과를 추가한 문서 갱신이다. v0.1.0 태그와 실행 ZIP은 검증한 스냅샷을 그대로 유지한다.
