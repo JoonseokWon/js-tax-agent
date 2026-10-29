@@ -21,10 +21,13 @@
 - 새 개발 의존성 esbuild 0.28.2, pnpm 11.25.0. 런타임 서버에는 외부 패키지가 필요 없다. 의존성 store는 프로젝트 .pnpm-store/에만 둔다. pnpm 11은 .npmrc 대신 pnpm-workspace.yaml의 설정을 읽으므로 해당 위치로 수정했고, 검증한 esbuild 버전의 설치 스크립트만 허용했다.
 - Windows 샌드박스에서는 Go 기반 esbuild가 상위 폴더 탐색을 거절당한다. 일반 Windows 사용자 권한 실행에서 Worker 빌드와 전체 테스트가 통과했다. 코드/검사 기준을 낮추지 않았다.
 - **키 상태:** 로컬 `.env`에 승인된 키 설정, 실제 호출 확인 완료. Sites 환경변수 revision 0/항목 없음 확인. 현재 도구의 value 인자는 문자열이며 로컬 비밀 파일 참조를 받지 않는다. plaintext를 도구 출력으로 읽거나 소스/번들에 넣는 우회는 하지 않았다. 사용자에게 Sites 환경변수 화면 확인을 요청했으나 설정 화면을 찾을 수 없다는 답을 받았다. 같은 질문을 반복하지 않는다.
-- **다음 순서:** GitHub v0.2.0 공개 프리릴리스·실행 ZIP·원격 CI 검증 → Sites 런타임 비밀값을 안전하게 등록할 경로 확보 → 기존 Site에 Worker 배포 및 인증 후 AI 검증. 등록 전 호스팅 AI가 연결됐다고 표시하지 않는다. 잔액 부족·만료·추가 결제 필요 시 충전하지 않고 중단한다.
+- **다음 순서:** Sites 런타임 비밀값을 안전하게 등록할 경로 확보 → 기존 Site에 Worker 배포 및 인증 후 AI 검증 → 종합소득세 완료 후 법인세·부가가치세 순서 확장. 등록 전 호스팅 AI가 연결됐다고 표시하지 않는다. 잔액 부족·만료·추가 결제 필요 시 충전하지 않고 중단한다.
 - 키 작업은 `C:/Users/user/.codex/plugins/cache/openai-curated-remote/openai-developers/1.3.13/skills/openai-platform-api-key/SKILL.md`를 따른다. plaintext 출력·키가 든 .env 읽기·Git 포함 금지. picker 선택값을 추측하지 않는다.
 - 현재 로컬 AI QA 서버 http://127.0.0.1:4327, exec session 4774. `.env`를 읽고 실행 중이며 실제 AI 확인 완료. 초기 키 없는 QA 서버는 4317/session 50586이었다. 기본 실행은 `node --env-file-if-exists=.env server.mjs`이며 포트는 환경변수 PORT로 바꾼다. 브라우저 tab 5를 사용했다.
-- v0.2 변경은 현재 작업 폴더에 있고 아직 GitHub/Sites에 게시하지 않았다. 아래는 v0.1 완료 기록이다.
+- **GitHub v0.2.0 공개 완료:** https://github.com/JoonseokWon/js-tax-agent/releases/tag/v0.2.0 · draft=false, prerelease=true. 소스/태그 커밋 `0525d7ed9ac46355dd28b5ec2b7983bc7038cb18`.
+- 실행 ZIP 624,991바이트와 SHA256SUMS-v0.2.0.txt 게시. SHA-256 `7b338f3051cffea22c6c0f77e124f88938dbe5162a18271711b1e96080e2af8c`. 익명 다운로드 결과 일치. 새 폴더 압축 해제 후 키 없는 서버·자료 검색·비밀 파일 차단을 확인했고, 패키지와 Worker 54개 파일에서 실제 키 미포함을 검사했다.
+- **원격 CI:** https://github.com/JoonseokWon/js-tax-agent/actions/runs/40821323059 및 40821322435 모두 completed/success, 태그 커밋과 일치. pnpm 고정 설치·31개 테스트·정적/Worker 빌드 단계 각각 success 확인.
+- **Sites v0.2는 미배포:** 서버 비밀값 전달이 미완료라 기존 v0.1 개인 접근 체험판을 유지한다. GitHub 공개 릴리스와 호스팅 AI 배포의 완료 여부를 혼동하지 않는다. 아래는 v0.1 완료 기록이다.
 
 ## 목적과 현재 상태
 
