@@ -22,7 +22,7 @@ test('문장별 미제공 인용·빈 인용·비정상 형식·허위 링크 �
 });
 test('상위 API 인증·권한·모델·할당량·요청 제한 오류를 구분',async()=>{
  const grounded=answerQuestion('종합소득세 세율은?');
- for(const[status,upstreamCode,expected]of [[401,null,'AI_AUTH'],[403,null,'AI_ACCESS'],[404,null,'AI_MODEL'],[429,'insufficient_quota','AI_QUOTA'],[429,'rate_limit_exceeded','AI_RATE_LIMIT'],[500,null,'AI_UPSTREAM_ERROR']])await assert.rejects(()=>generateAnswer(grounded,{apiKey:key,fetchImpl:async()=>new Response(JSON.stringify({error:{code:upstreamCode,message:'sensitive upstream details'}}),{status})}),new RegExp(expected));
+ for(const[status,upstreamCode,expected]of [[401,null,'AI_AUTH'],[403,null,'AI_ACCESS'],[404,null,'AI_MODEL'],[429,'insufficient_quota','AI_QUOTA'],[429,'credit_balance_exhausted','AI_QUOTA'],[429,'rate_limit_exceeded','AI_RATE_LIMIT'],[500,null,'AI_UPSTREAM_ERROR']])await assert.rejects(()=>generateAnswer(grounded,{apiKey:key,fetchImpl:async()=>new Response(JSON.stringify({error:{code:upstreamCode,message:'sensitive upstream details'}}),{status})}),new RegExp(expected));
  await assert.rejects(()=>generateAnswer(grounded,{apiKey:key,fetchImpl:async()=>{throw Object.assign(new Error(),{name:'TimeoutError'});}}),/AI_TIMEOUT/);
 });
 test('설정 조회는 과금 API를 호출하지 않고 키를 노출하지 않음',async()=>{
