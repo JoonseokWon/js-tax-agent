@@ -3,8 +3,8 @@
 ## v0.2 진행 인계 (2026-10-29)
 
 - 최근 사용자 지시: 무료 크레딧을 직접 확인하고, 추가 결제 없이 확보된 무료 크레딧으로만 실제 AI 연결·v0.2 배포를 진행한다. 충전·카드 등록·자동 충전·유료 잔액 사용을 승인한 것이 아니다. 키 생성·파일 쓰기·실제 API 호출은 아직 0건이다.
-- 연결된 OpenAI Developers 대시보드와 조직 목록을 실제 확인했다. 사용할 수 있는 무료 크레딧을 확보하지 못했으며 미수령 혜택의 자격은 미확인이다. 계정별 잔액 등 비공개 확인 기록은 Git 무시 대상인 outputs/credit-check.txt에만 둔다. 공개 저장소에 계정 결제 화면·잔액 캡처를 포함하지 않는다.
-- 공식 Platform 결제 페이지는 별도 로그인 화면으로 이동했다. 해당 탭을 열어 사용자 로그인을 요청했다. 연결 도구 목록에는 혜택 preview_api_credit_promo/discover_api_orgs/link_api_org가 없어 자동 혜택 조회·수령을 시도하지 않았다. 설치된 setup 스킬은 도구가 없으면 수령을 중단하도록 명시한다. 무료 크레딧 확인 전 실호출·v0.2 게시를 대기한다.
+- 로그인한 공식 Platform 결제 화면에서 무료 구독 혜택을 확인했다. 자동 수령 도구가 없어 사용자가 직접 Link & claim을 완료했으며, 지급 잔액·Available 상태·만료일을 확인했다. 결제 수단 화면은 유료 결제 플랜을 시작하지 않았다고 표시한다. 현재 무료 크레딧으로 진행 가능하지만, 추가 결제가 필요하거나 자동 결제가 가능한 상태로 바뀌면 중단한다.
+- 계정별 금액·만료일 등 비공개 확인 기록과 화면은 Git 무시 대상인 outputs/에만 둔다. 공개 저장소에 계정 결제 화면·잔액 캡처를 포함하지 않는다. 연결 도구 목록에는 preview_api_credit_promo/discover_api_orgs/link_api_org가 없어 자동 수령은 시도하지 않았다.
 - 키 이름·조직/프로젝트 ID가 포함된 보안 widget follow-up도 미수신 상태다. 기존 새 키 생성 승인은 유지하며, 선택값을 추측하거나 같은 승인 질문을 반복하지 않는다.
 - 사용자 추가 범위: 종합소득세 v0.2 검증·배포를 마친 뒤 법인세와 부가가치세도 진행한다. 이 순서를 유지한다.
 
@@ -19,7 +19,7 @@
 - 새 개발 의존성 esbuild 0.28.2, pnpm 11.25.0. 런타임 서버에는 외부 패키지가 필요 없다. 의존성 store는 프로젝트 .pnpm-store/에만 둔다. pnpm 11은 .npmrc 대신 pnpm-workspace.yaml의 설정을 읽으므로 해당 위치로 수정했고, 검증한 esbuild 버전의 설치 스크립트만 허용했다.
 - Windows 샌드박스에서는 Go 기반 esbuild가 상위 폴더 탐색을 거절당한다. 일반 Windows 사용자 권한 실행에서 Worker 빌드와 전체 테스트가 통과했다. 코드/검사 기준을 낮추지 않았다.
 - **키 상태:** 환경/.env에 키 없음 확인. 사용자가 OpenAI Developers를 설치·연결했고, 새 프로젝트 전용 키 생성을 명시적으로 승인했다. `open_codex_api_key_setup({})`를 호출했으며, 아직 키 이름·조직/프로젝트 선택을 담은 widget follow-up을 받지 않았다. 키를 생성하거나 파일에 쓰지 않았다.
-- **다음 순서:** 로그인 후 무료 크레딧의 발급·유효기간과 추가 결제가 발생하지 않을 조건 확인 → 보안 설정의 선택 follow-up → 승인된 로컬 `.env` 목적지 확인 → 설치된 openai-platform-api-key 스킬의 prepare/암호화 생성/decrypt → `node --env-file=.env scripts/check-ai.mjs` 실제 호출 → UI에서 실제 AI/오류/메모 재검증 → Sites 런타임 키를 안전한 승인 경로로 설정 → 빌드/배포·v0.2.0 공개 프리릴리스 → 문서 갱신. 잔액 부족 시 충전하지 않고 중단한다.
+- **다음 순서:** 보안 설정의 선택 follow-up → 승인된 로컬 `.env` 목적지 확인 → 설치된 openai-platform-api-key 스킬의 prepare/암호화 생성/decrypt → `node --env-file=.env scripts/check-ai.mjs` 실제 호출 → UI에서 실제 AI/오류/메모 재검증 → Sites 런타임 키를 안전한 승인 경로로 설정 → 빌드/배포·v0.2.0 공개 프리릴리스 → 문서 갱신. 잔액 부족·만료·추가 결제 필요 시 충전하지 않고 중단한다.
 - 키 작업은 `C:/Users/user/.codex/plugins/cache/openai-curated-remote/openai-developers/1.3.13/skills/openai-platform-api-key/SKILL.md`를 따른다. plaintext 출력·키가 든 .env 읽기·Git 포함 금지. picker 선택값을 추측하지 않는다.
 - 로컬 QA 서버 http://127.0.0.1:4317, exec session 50586. 키 미설정 상태이며 .env를 자동 로드하지 않고 시작했다. 키 저장 후 .env를 읽는 실행으로 재시작해야 한다. 브라우저 새 로컬 탭 3을 사용했다(기존 탭 재획득은 browser.user unavailable, 새 탭 생성으로 복구).
 - v0.2 변경은 현재 작업 폴더에 있고 아직 GitHub/Sites에 게시하지 않았다. 아래는 v0.1 완료 기록이다.
