@@ -12,5 +12,6 @@ await cp(path.join(root,'public'),dist,{recursive:true});
 const files=[];
 async function visit(dir){for(const e of await readdir(dir,{withFileTypes:true})){const p=path.join(dir,e.name);if(e.isDirectory())await visit(p);else files.push({path:path.relative(dist,p).replaceAll('\\','/'),sha256:createHash('sha256').update(await readFile(p)).digest('hex')});}}
 await visit(dist);
-await writeFile(path.join(dist,'build-manifest.json'),JSON.stringify({version:'0.1.0',files},null,2)+'\n');
+const version=JSON.parse(await readFile(path.join(root,'package.json'),'utf8')).version;
+await writeFile(path.join(dist,'build-manifest.json'),JSON.stringify({version,files},null,2)+'\n');
 console.log(`정적 체험판 빌드 완료: dist (${files.length}개 파일)`);

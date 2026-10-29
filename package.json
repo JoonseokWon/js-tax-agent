@@ -1,14 +1,18 @@
 {
   "name": "js-tax-agent",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@11.25.0",
   "description": "공식 근거로 살펴보는 종합소득세와 시나리오 비교",
   "engines": { "node": ">=22.9.0" },
   "scripts": {
     "start": "node --env-file-if-exists=.env server.mjs",
-    "test": "node --test",
-    "build": "node scripts/build.mjs"
+    "test": "node scripts/test.mjs",
+    "build": "node scripts/build.mjs",
+    "build:site": "node scripts/build-site.mjs",
+    "check:ai": "node --env-file-if-exists=.env scripts/check-ai.mjs"
   },
+  "devDependencies": { "esbuild": "0.28.2" },
   "license": "MIT"
 }
