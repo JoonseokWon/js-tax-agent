@@ -4,9 +4,9 @@
 
 [GitHub 저장소](https://github.com/JoonseokWon/js-tax-agent) · [v0.2.0 다운로드](https://github.com/JoonseokWon/js-tax-agent/releases/tag/v0.2.0) · [호스팅 체험판](https://js-tax-agent.keengiant19.chatgpt.site) (소유자 개인 접근 권한, ChatGPT 로그인 필요)
 
-현재 소스는 **v0.2.0**입니다. 국세청 회신·판례와 실제 AI 질의응답을 추가했습니다. 로컬 AI는 공개 예시 2건으로 검증했습니다. 호스팅 체험판은 v0.1.0이며, v0.2 Worker 배포는 서버 비밀값의 안전한 등록 경로 확보를 기다리고 있습니다. 실제 상태는 [검증 기록](docs/validation.md)을 확인하세요.
+현재 소스는 **v0.2.0**입니다. 국세청 질의회신·판례와 서버 AI 연결을 추가하고 기존 개인 전용 주소에 Worker 버전을 게시했습니다. 기본 자료 요약과 세액 비교는 키 없이 사용할 수 있습니다. 생성 AI에는 서버 API 키와 공급자의 사용 가능 한도가 필요하며, 호스팅 정상 생성 답변 평가는 아직 완료하지 않았습니다.
 
-![실제 AI 판례 답변](docs/screenshots/v0.2/desktop-ai.png)
+![로컬에서 검증한 AI 판례 답변](docs/screenshots/v0.2/desktop-ai.png)
 
 ## 실행
 
@@ -48,7 +48,7 @@ OpenAI Developers의 보안 키 설정 또는 [로컬 보안 실행 안내](docs
 
 생성 답변은 문장별로 제공된 근거 ID만 인용하도록 구조화하고 서버에서 검증합니다. 이는 문장 전체의 정확성을 보증하지 않습니다. `gpt-5.4-mini`로 개업 전 비용 질문과 초과인출금 이자 판례 질문의 실제 응답·인용·적용 한계를 확인했습니다. 판례 답변의 화면 표시와 메모 다운로드도 검증했습니다. 두 예시의 성공이 모든 세무 질문의 정확성이나 전문가 검토를 대신하지 않습니다.
 
-Sites Worker는 개인 접근 권한과 로그인 사용자 확인을 유지하도록 구현했습니다. 호스팅 키는 로컬 `.env`와 별개인 런타임 비밀값으로 등록해야 합니다. 현재 이 전달 단계는 미완료이며 v0.2 Worker는 배포하지 않았습니다. 동시 요청·분당 횟수 제한은 인스턴스 단위이며 영구적인 계정 과금 한도가 아닙니다. 정적 빌드만 호스팅하면 서버 AI 기능은 제공되지 않습니다.
+Sites Worker는 개인 접근 권한과 로그인 사용자 확인을 유지합니다. API 키는 런타임 비밀값으로 주입하고 공개 소스·브라우저·배포 번들에는 포함하지 않습니다. 설정 절차는 [키 설정 안내](docs/api-key-setup.md)를 확인하세요. 동시 요청·분당 제한은 인스턴스 단위이며 영구적인 계정 과금 한도가 아닙니다.
 
 API 참고: [OpenAI 텍스트 생성](https://developers.openai.com/api/docs/guides/text), [Responses API](https://developers.openai.com/api/reference/resources/responses/methods/create).
 
