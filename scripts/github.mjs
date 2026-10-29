@@ -10,7 +10,8 @@ const headers={'Authorization':`Bearer ${values.password}`,'Accept':'application
 async function api(route,options={}){const r=await fetch('https://api.github.com'+route,{...options,headers:{...headers,...options.headers}});const data=await r.json();if(!r.ok)throw new Error(`GitHub ${r.status}: ${data.message}`);return data;}
 try{
  const user=await api('/user');
- if(action==='probe'){console.log(JSON.stringify({login:user.login}));process.exit(0);}
+ if(action==='probe'){console.log(JSON.stringify({login:user.login}));}
+ else {
  if(user.login!=='JoonseokWon')throw new Error('연결된 GitHub 사용자와 로컬 인증 사용자가 다릅니다.');
  if(action==='create'){
   const r=await fetch(`https://api.github.com/repos/${user.login}/${repo}`,{headers});
@@ -27,4 +28,5 @@ try{
   const repository=await api(`/repos/${user.login}/${repo}`);const release=await api(`/repos/${user.login}/${repo}/releases/latest`).catch(()=>null);const releases=release?[release]:await api(`/repos/${user.login}/${repo}/releases`);
   console.log(JSON.stringify({url:repository.html_url,private:repository.private,branch:repository.default_branch,releases:releases.map(r=>({url:r.html_url,tag:r.tag_name,assets:r.assets.map(a=>({name:a.name,size:a.size}))}))}));
  }else throw new Error('지원하지 않는 작업입니다.');
-}catch(e){console.error(e.message);process.exit(1);}
+ }
+}catch(e){console.error(e.message);process.exitCode=1;}
