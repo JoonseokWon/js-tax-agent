@@ -1,5 +1,22 @@
 # JS Tax Agent 인계
 
+## v0.2 진행 인계 (2026-10-29)
+
+- 사용자 요청: 공식 질의회신·판례 추가와 실제 AI 연결. 기존 첫 버전 범위와 GitHub 공개/릴리스 요청을 유지한다.
+- 국세청 회신 3개·대법원 판례 3개를 공식 본문에서 검증해 수록했다. 총 11개 자료. 사례의 번호·날짜·사실관계·판단·한계를 표시하고 계산 귀속연도와 분리했다.
+- 등록 전 비용 두 회신 동시 검색, 문서·사건번호 정확 검색과 종류 필터를 구현했다.
+- Responses API에 문장별 제공 근거 ID·추가 확인 사실·적용 한계 구조를 연결했다. 인증/권한/모델/할당량/속도/시간초과/통신 오류를 구분한다. 키와 원시 오류 본문은 브라우저로 보내지 않는다.
+- 로컬 Node와 Sites Worker가 `lib/http-api.mjs`를 공유한다. Worker는 로그인 헤더를 요구하며 기존 사이트의 개인 접근 권한을 유지한다. 웹 자산은 esbuild로 단일 Worker에 내장한다.
+- `node scripts/test.mjs`: 현재 테스트 31개 통과. 과거 outputs/압축 해제본까지 중복 실행되는 `node --test` 대신 현재 tests/만 명시적으로 실행하도록 변경했다.
+- 1440×1000/390×844에서 회신 두 건 표시·판례 필터·사건번호→질문·사실관계/한계 펼침을 확인했다. 모바일 가로 넘침 없음. 캡처는 docs/screenshots/v0.2/.
+- 새 개발 의존성 esbuild 0.28.2, pnpm 11.25.0. 런타임 서버에는 외부 패키지가 필요 없다. 의존성 store는 프로젝트 .pnpm-store/에만 둔다. pnpm 11은 .npmrc 대신 pnpm-workspace.yaml의 설정을 읽으므로 해당 위치로 수정했고, 검증한 esbuild 버전의 설치 스크립트만 허용했다.
+- Windows 샌드박스에서는 Go 기반 esbuild가 상위 폴더 탐색을 거절당한다. 일반 Windows 사용자 권한 실행에서 Worker 빌드와 전체 테스트가 통과했다. 코드/검사 기준을 낮추지 않았다.
+- **키 상태:** 환경/.env에 키 없음 확인. 사용자가 OpenAI Developers를 설치·연결했고, 새 프로젝트 전용 키 생성을 명시적으로 승인했다. `open_codex_api_key_setup({})`를 호출했으며, 아직 키 이름·조직/프로젝트 선택을 담은 widget follow-up을 받지 않았다. 키를 생성하거나 파일에 쓰지 않았다.
+- **다음 순서:** 보안 설정의 선택 follow-up → 승인된 로컬 `.env` 목적지 확인 → 설치된 openai-platform-api-key 스킬의 prepare/암호화 생성/decrypt → `node --env-file=.env scripts/check-ai.mjs` 실제 호출 → UI에서 실제 AI/오류/메모 재검증 → Sites 런타임 키를 안전한 승인 경로로 설정 → 빌드/배포·v0.2.0 공개 프리릴리스 → 문서 갱신.
+- 키 작업은 `C:/Users/user/.codex/plugins/cache/openai-curated-remote/openai-developers/1.3.13/skills/openai-platform-api-key/SKILL.md`를 따른다. plaintext 출력·키가 든 .env 읽기·Git 포함 금지. picker 선택값을 추측하지 않는다.
+- 로컬 QA 서버 http://127.0.0.1:4317, exec session 50586. 키 미설정 상태이며 .env를 자동 로드하지 않고 시작했다. 키 저장 후 .env를 읽는 실행으로 재시작해야 한다. 브라우저 새 로컬 탭 3을 사용했다(기존 탭 재획득은 browser.user unavailable, 새 탭 생성으로 복구).
+- v0.2 변경은 현재 작업 폴더에 있고 아직 GitHub/Sites에 게시하지 않았다. 아래는 v0.1 완료 기록이다.
+
 ## 목적과 현재 상태
 
 - UI·UX 적용 여부: 적용 / 화면 있음.
