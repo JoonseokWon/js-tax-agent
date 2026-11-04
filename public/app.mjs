@@ -2,6 +2,7 @@ import {answerQuestion,validateQuestion} from './lib/rag.mjs';
 import {compareTax,BRACKETS,CORPORATE_BRACKETS,TRANSFER_BRACKETS,TAX_SCOPES,VAT_RATE,parseAmount} from './lib/tax.mjs';
 import {LAW_REVIEW,supportedReviewDate,transferLawAt,transferLawUrl} from './lib/law-review.mjs';
 import {calculationImpact,sourceImpact} from './lib/law-impact.mjs';
+import {transferDeductions,transferFactIssue,transferDeductionConflict,transferDeductionTotal} from './lib/transfer-check.mjs';
 import {corpus,corpusStats} from './data/corpus.mjs';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -144,17 +145,28 @@ const comparisons={
   rows:[['매출 공급가액','sales'],['매출세액','outputTax'],['공제 가능 매입세액','inputTax']],
   title:'2026년 · 일반과세자 · 국내 10% 과세 거래',scope:'간이과세·영세율·면세·공통매입세액 안분·가산세·기납부세액은 제외해요.',
   notes:'두 안에는 같은 신고 대상 기간의 금액을 넣어 주세요. 매입 금액 전체가 아니라 공제 가능한 부가세액을 입력해요.',formula:'매출 공급가액 × '+VAT_RATE+'% (원 미만 버림) − 공제 가능 매입세액',source:'vat-flow'},
- inheritance:{...transferComparison,fields:[['amount','상속세 과세가액',800000000,800000000],['deductions','확인한 상속공제·수수료 합계',500000000,600000000]],
+ inheritance:{...transferComparison,fields:[['amount','상속세 과세가액',800000000,800000000]],
   title:'2026년 상속개시 · 일반 상속세 산출세액',scope:'채무·사전증여를 반영한 과세가액과 한도 확인을 마친 공제·수수료를 넣어 주세요. 할증·세액공제·가산세는 제외해요.',
   notes:'과세가액은 상속재산 평가와 합산·차감 항목을 반영해 구해요. 일괄공제·배우자공제 등은 상속인 구성과 적용 한도를 확인한 뒤 합산해 주세요.',source:'inheritance-flow'},
- gift:{...transferComparison,fields:[['amount','증여세 과세가액',150000000,100000000],['deductions','확인한 증여 공제·수수료 합계',50000000,50000000]],
+ gift:{...transferComparison,fields:[['amount','증여세 과세가액',150000000,100000000]],
   title:'2026년 증여 · 일반 증여세 산출세액',scope:'합산 대상 증여를 반영한 과세가액과 한도 확인을 마친 공제·수수료를 넣어 주세요. 특례·할증·세액공제·가산세는 제외해요.',
   notes:'관계에 따른 증여재산공제 한도와 최근 10년간 적용한 공제액을 확인하세요. 혼인·출산 공제는 요건과 한도를 별도로 확인해 주세요.',source:'gift-flow'}
 };
 const comparisonValues={};
 const reviewDates={};
+const transferDrafts={};
+function transferDraft(tax){
+ if(!transferDrafts[tax]){
+  const first=tax==='inheritance'?{kind:'lump',amount:'500000000'}:{kind:'basic',amount:'50000000'};
+  const rows={a:[{...first}],b:[{...first}]};
+  if(tax==='inheritance')rows.b.push({kind:'finance',amount:'100000000'});
+  transferDrafts[tax]={facts:{},rows};
+ }
+ return transferDrafts[tax];
+}
 function resetComparison(message){
  $('#comparison-result').hidden=true;$('#compare-state').textContent=message;errorAt($('#compare-error'),'');
+ errorAt($('#transfer-fact-error'),'');
 }
 function renderComparisonReview(){
  const tax=$('#compare-tax').value, review=lawReviews[tax];
@@ -169,6 +181,57 @@ function renderAmount(input){
  const help=$('#'+input.id+'-help');
  try{help.textContent=money(parseAmount(input.value));}catch{help.textContent='원 단위 정수로 입력해 주세요.';}
 }
+function toggleTransferFacts(tax,facts){
+ const showRemaining=tax==='gift'&&facts.priorDeductions==='used';
+ for(const id of ['basic-group','family-group','limit-help'])$('#transfer-'+id).hidden=!showRemaining;
+ $('#transfer-split-group').hidden=tax!=='inheritance';
+ $('#transfer-split-date-group').hidden=tax!=='inheritance'||facts.split!=='completed';
+}
+function renderTransferFacts(tax){
+ const panel=$('#transfer-facts');
+ panel.hidden=!tracksAmendments(tax);
+ if(panel.hidden)return;
+ const {facts}=transferDraft(tax);
+ panel.querySelectorAll('[data-transfer-fact]').forEach(input=>{input.value=facts[input.dataset.transferFact]??'';input.removeAttribute('aria-invalid');});
+ const inheritance=tax==='inheritance';
+ $('#transfer-gift-help').textContent=inheritance?
+  '일반적으로 상속인은 상속개시 전 10년, 상속인 외의 사람은 5년 내 증여를 확인해요.':
+  '이번 증여 전 10년 내 동일인에게 받은 증여의 합산 여부를 확인해 주세요.';
+ $('#transfer-prior-help').textContent=inheritance?
+  '사전증여 때 공제받은 금액이 있다면 상속공제 한도 계산에 반영했는지 확인해 주세요.':
+  '최근 10년의 일반 공제 이력과 혼인·출산 공제 사용액을 각각 확인해 주세요. 혼인·출산 공제는 한 합산 한도를 써요.';
+ $('#transfer-facts-source').href=inheritance?
+  'https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=7956&mi=6632':
+  'https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=7728&mi=2329';
+ toggleTransferFacts(tax,facts);
+}
+function deductionInput(side,index,field){
+ return $('#'+side+'-deductions-'+index+'-'+field);
+}
+function renderDeductionRows(tax,side){
+ const rows=transferDraft(tax).rows[side];
+ const options=Object.entries(transferDeductions[tax]);
+ $('#'+side+'-deduction-rows').innerHTML=rows.map(({kind,amount},index)=>{
+  const id=side+'-deductions-'+index, line=index+1;
+  const choices=options.map(([key,label])=>`<option value="${key}"${key===kind?' selected':''}>${esc(label)}</option>`).join('');
+  return `<div class="deduction-row" data-index="${index}">
+   <div><label for="${id}-kind">공제 항목 ${line}</label><select id="${id}-kind" data-deduction-field="kind" aria-describedby="${side}-deduction-warning compare-error"><option value="">항목 선택</option>${choices}</select></div>
+   <div><label for="${id}-amount">금액 ${line} (원)</label><input id="${id}-amount" inputmode="numeric" value="${esc(amount)}" data-deduction-field="amount" aria-describedby="compare-error"></div>
+   <button type="button" class="text-button" data-remove-deduction aria-label="공제 항목 ${line} 삭제">삭제</button>
+  </div>`;
+ }).join('');
+ renderDeductionFeedback(tax,side);
+}
+function renderDeductionFeedback(tax,side){
+ const {rows,facts}=transferDraft(tax);
+ const conflict=transferDeductionConflict(tax,rows[side]);
+ const status=$('#'+side+'-deduction-warning');
+ $('#'+side+'-deduction-rows').querySelectorAll('[aria-invalid]').forEach(input=>input.removeAttribute('aria-invalid'));
+ if(conflict)deductionInput(side,conflict.index,conflict.field).setAttribute('aria-invalid','true');
+ errorAt(status,conflict?.message??'');
+ const {total}=transferDeductionTotal(tax,rows[side],facts);
+ $('#'+side+'-deduction-total').textContent=total===undefined?'입력을 확인하면 합계가 표시돼요.':'공제·수수료 합계 '+money(total);
+}
 function setCompareTax(tax){
  $('#compare-tax').value=tax;
  const config=comparisons[tax],saved=comparisonValues[tax];
@@ -177,14 +240,23 @@ function setCompareTax(tax){
    const id=prefix+'-'+key,value=saved?.[id]??examples[index];
    return `<label for="${id}">${esc(label)} <span>원</span></label><input id="${id}" inputmode="numeric" value="${esc(value)}" aria-describedby="${id}-help compare-error"><small id="${id}-help" class="amount-help"></small>`;
   }).join('');
+  if(tracksAmendments(tax)){
+   $('#'+prefix+'-fields').insertAdjacentHTML('beforeend',`<div class="deduction-list" data-deduction-side="${prefix}">
+    <p><strong>공제·수수료 내역</strong> · 같은 항목은 한 줄로 합쳐 주세요.</p>
+    <div id="${prefix}-deduction-rows"></div><p class="error" id="${prefix}-deduction-warning" role="status" hidden></p>
+    <p id="${prefix}-deduction-total" class="deduction-total" aria-live="polite"></p>
+    <button type="button" class="button secondary" data-add-deduction>공제 항목 추가</button></div>`);
+   renderDeductionRows(tax,prefix);
+  }
  }
+ renderTransferFacts(tax);
  $('#compare-scope').innerHTML=`<strong>${esc(config.title)}</strong><span>${esc(config.scope)}</span>`;
  $('#compare-rules').open=false;
  $('#compare-rules-title').textContent=config.brackets?'계산 범위와 기본세율 확인하기':'부가세 계산 범위 확인하기';
  const source=corpus.find(doc=>doc.id===config.source);
  const rates=config.brackets?`<div class="table-wrap"><table><caption class="sr-only">${esc(TAX_SCOPES[tax].name)} 기본세율</caption><thead><tr><th scope="col">과세표준 상한</th><th scope="col">세율</th><th scope="col">누진공제</th></tr></thead><tbody>${config.brackets.map(b=>`<tr><td>${b.limit===Infinity?config.highest:money(b.limit)+' 이하'}</td><td>${b.rate}%</td><td>${money(b.deduction)}</td></tr>`).join('')}</tbody></table></div>`:'';
  $('#compare-rules-body').innerHTML=`<p>${esc(config.notes)}</p><p>${esc(config.formula)}</p>${rates}<a href="${esc(source.url)}" target="_blank" rel="noopener noreferrer">국세청 계산 근거 보기 ↗</a>`;
- document.querySelectorAll('.scenario input').forEach(renderAmount);
+ document.querySelectorAll('.scenario input:not([data-deduction-field])').forEach(renderAmount);
  if(tax==='inheritance'||tax==='gift')$('#law-review').open=true;
  renderLawReview(tax);
  resetComparison(saved?'이전에 입력한 값을 불러왔어요. 세액 비교하기를 눌러 확인하세요.':'예시값이에요. 본인 조건에 맞게 수정한 뒤 비교해 주세요.');
@@ -228,6 +300,13 @@ function renderTransferLaw(container,{range,versions,provisions}){
 }
 $('#review-date').addEventListener('change',e=>{
  const tax=$('#compare-tax').value;reviewDates[tax]=e.target.value;
+ if(tracksAmendments(tax)){
+  const {facts}=transferDraft(tax);
+  delete facts.priorGifts;
+  delete facts.priorDeductions;
+  renderTransferFacts(tax);
+  for(const side of ['a','b'])renderDeductionFeedback(tax,side);
+ }
  renderLawReview(tax);resetComparison('기준일이 바뀌었어요. 적용 범위를 확인한 뒤 다시 비교하세요.');
 });
 function filterTaxSources(tax,kind='all'){
@@ -237,36 +316,86 @@ $('#review-sources').addEventListener('click',()=>filterTaxSources($('#compare-t
 $('#compare-tax').addEventListener('change',e=>setCompareTax(e.target.value));
 $('#compare-form').addEventListener('input',e=>{
  const input=e.target;
- if(!input.matches('.scenario input'))return;
  const tax=$('#compare-tax').value;
- comparisonValues[tax]??={};comparisonValues[tax][input.id]=input.value;
- renderAmount(input);input.removeAttribute('aria-invalid');
+ input.removeAttribute('aria-invalid');
+ if(input.dataset.transferFact){
+  const {facts}=transferDraft(tax);
+  facts[input.dataset.transferFact]=input.value;
+  toggleTransferFacts(tax,facts);
+  for(const side of ['a','b'])renderDeductionFeedback(tax,side);
+ }else if(input.dataset.deductionField){
+  const side=input.closest('[data-deduction-side]').dataset.deductionSide;
+  const index=Number(input.closest('[data-index]').dataset.index);
+  transferDraft(tax).rows[side][index][input.dataset.deductionField]=input.value;
+  renderDeductionFeedback(tax,side);
+ }else if(input.matches('.scenario input')){
+  comparisonValues[tax]??={};comparisonValues[tax][input.id]=input.value;
+  renderAmount(input);
+ }else return;
  resetComparison('입력이 바뀌었어요. 세액 비교하기를 눌러 다시 계산하세요.');
 });
-function invalidAmount(input,error){input.setAttribute('aria-invalid','true');input.focus();throw error;}
+$('#compare-form').addEventListener('click',e=>{
+ const button=e.target.closest('[data-add-deduction],[data-remove-deduction]');
+ if(!button)return;
+ const tax=$('#compare-tax').value, side=button.closest('[data-deduction-side]').dataset.deductionSide;
+ const rows=transferDraft(tax).rows[side];
+ if(button.hasAttribute('data-add-deduction'))rows.push({kind:'',amount:''});
+ else rows.splice(Number(button.closest('[data-index]').dataset.index),1);
+ renderDeductionRows(tax,side);
+ resetComparison('공제 내역이 바뀌었어요. 다시 비교해 주세요.');
+ if(button.hasAttribute('data-add-deduction'))deductionInput(side,rows.length-1,'kind').focus();
+ else $('#'+side+'-fields [data-add-deduction]').focus();
+});
+function invalidInput(input,error){
+ input.setAttribute('aria-invalid','true');
+ input.setAttribute('aria-errormessage',input.dataset.transferFact?'transfer-fact-error':'compare-error');
+ if(input.dataset.transferFact)errorAt($('#transfer-fact-error'),error.message);
+ input.focus();
+ throw error;
+}
 function readScenario(tax,prefix){
  const data={year:TAX_SCOPES[tax].year};
  for(const [key,label] of comparisons[tax].fields){
   const input=$('#'+prefix+'-'+key);
-  try{data[key]=parseAmount(input.value,label);}catch(error){invalidAmount(input,error);}
+  try{data[key]=parseAmount(input.value,label);}catch(error){invalidInput(input,error);}
  }
- if(tax==='income'&&data.expenses>data.revenue)invalidAmount($('#'+prefix+'-expenses'),new Error('필요경비가 수입보다 커요. 이 버전은 결손금 계산을 지원하지 않아요.'));
+ if(tax==='income'&&data.expenses>data.revenue)invalidInput($('#'+prefix+'-expenses'),new Error('필요경비가 수입보다 커요. 이 버전은 결손금 계산을 지원하지 않아요.'));
+ if(tracksAmendments(tax)){
+  const {facts,rows}=transferDraft(tax);
+  const {issue,total}=transferDeductionTotal(tax,rows[prefix],facts);
+  if(issue){
+   const input=issue.index===undefined?$('#transfer-'+issue.field):deductionInput(prefix,issue.index,issue.field);
+   const scenario=prefix==='a'?'기준안 A':'비교안 B';
+   invalidInput(input,new Error(scenario+' · '+issue.message));
+  }
+  data.deductions=total;
+ }
  return data;
 }
 $('#compare-form').addEventListener('submit',e=>{
  e.preventDefault();const tax=$('#compare-tax').value;
- resetComparison('');document.querySelectorAll('.scenario input').forEach(i=>i.removeAttribute('aria-invalid'));
+ resetComparison('');e.currentTarget.querySelectorAll('[aria-invalid]').forEach(i=>i.removeAttribute('aria-invalid'));
  const date=reviewDates[tax];
  if(date&&!supportedReviewDate(tax,date)){
   $('#law-review').open=true;$('#review-date').focus();
   errorAt($('#compare-error'),'선택한 기준일은 계산 범위 밖이에요. 절세 검토 순서에서 기준일을 확인해 주세요.');
   return;
  }
- try{const result=compareTax(tax,readScenario(tax,'a'),readScenario(tax,'b'));renderComparison(tax,result);$('#compare-state').textContent='입력한 가정으로 비교했어요.';}
- catch(e){errorAt($('#compare-error'),e.message);$('#compare-state').textContent='입력값을 수정한 뒤 다시 비교해 주세요.';}
+ try{
+  if(tracksAmendments(tax)){
+   const issue=transferFactIssue(tax,transferDraft(tax).facts,date);
+   if(issue)invalidInput($('#transfer-'+issue.field),new Error(issue.message));
+  }
+  const result=compareTax(tax,readScenario(tax,'a'),readScenario(tax,'b'));
+  renderComparison(tax,result);$('#compare-state').textContent='입력한 가정으로 비교했어요.';
+ }
+ catch(e){
+  if($('#transfer-fact-error').hidden)errorAt($('#compare-error'),e.message);
+  $('#compare-state').textContent='입력값을 수정한 뒤 다시 비교해 주세요.';
+ }
 });
 $('#load-example').addEventListener('click',()=>{
- const tax=$('#compare-tax').value;delete comparisonValues[tax];setCompareTax(tax);
+ const tax=$('#compare-tax').value;delete comparisonValues[tax];delete transferDrafts[tax];setCompareTax(tax);
  $('#compare-state').textContent='예시값을 불러왔어요. 세액 비교하기를 눌러 확인하세요.';
 });
 const vatResult=tax=>tax===0?'0원':(tax>0?'납부 ':'환급 ')+money(Math.abs(tax));

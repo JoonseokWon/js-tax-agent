@@ -64,7 +64,23 @@
      <li><strong>확인한 가정을 두 안에 넣어요.</strong><p>기준안과 비교안은 같은 기간으로 맞추세요. 수록 근거의 확인일과 계산 범위는 아래 원문 및 검토 메모에서 볼 수 있어요.</p></li>
     </ol>
    </details>
-   <form id="compare-form" novalidate><div class="compare-toolbar"><span>금액 단위 · 원</span><button id="load-example" type="button" class="text-button">예시값 불러오기</button></div><div class="scenario-grid">
+   <form id="compare-form" novalidate>
+   <fieldset id="transfer-facts" class="transfer-facts" hidden>
+    <legend>세액 비교 전 확인할 내용</legend>
+    <p>두 안에 같은 상속이나 증여의 내역을 사용해 주세요. 과세가액은 아래에서 입력할 공제·수수료를 빼기 전 금액이에요.</p>
+    <div class="transfer-fact-grid">
+     <div><label for="transfer-priorGifts">사전증여 내역</label><select id="transfer-priorGifts" data-transfer-fact="priorGifts" aria-describedby="transfer-gift-help compare-error"><option value="">확인 상태 선택</option><option value="none">합산할 사전증여 없음 확인</option><option value="included">합산 대상과 금액을 확인해 과세가액에 반영</option></select><p id="transfer-gift-help"></p></div>
+     <div><label for="transfer-priorDeductions">이미 적용한 공제 내역</label><select id="transfer-priorDeductions" data-transfer-fact="priorDeductions" aria-describedby="transfer-prior-help compare-error"><option value="">확인 상태 선택</option><option value="none">이미 적용한 공제 없음 확인</option><option value="used">이미 적용한 공제와 남은 한도 확인</option></select><p id="transfer-prior-help"></p></div>
+     <div id="transfer-split-group" hidden><label for="transfer-split">배우자 상속재산 분할·등기 상태</label><select id="transfer-split" data-transfer-fact="split" aria-describedby="transfer-split-help compare-error"><option value="">확인 상태 선택</option><option value="irrelevant">배우자 상속공제 미검토</option><option value="completed">분할 및 필요한 등기·등록 완료</option><option value="pending">분할 또는 등기 미완료</option><option value="exception">분할일 없이 공제할 근거 확인</option></select><p id="transfer-split-help">배우자 공제를 검토한다면 분할·등기 및 신고 시점과 예외 요건을 함께 확인해 주세요.</p></div>
+     <div id="transfer-split-date-group" hidden><label for="transfer-splitDate">배우자 상속재산 분할일</label><input id="transfer-splitDate" type="date" data-transfer-fact="splitDate" aria-describedby="compare-error"></div>
+     <div id="transfer-basic-group" hidden><label for="transfer-basic">증여재산공제 남은 한도 (원)</label><input id="transfer-basic" inputmode="numeric" data-transfer-fact="basic" aria-describedby="transfer-limit-help compare-error"></div>
+     <div id="transfer-family-group" hidden><label for="transfer-family">혼인·출산 공제 남은 합산 한도 (원)</label><input id="transfer-family" inputmode="numeric" data-transfer-fact="family" aria-describedby="transfer-limit-help compare-error"></div>
+    </div>
+    <p id="transfer-limit-help" hidden>이번 증여에 쓸 공제의 남은 한도를 넣어 주세요. 남은 금액이 없으면 0원을 입력하세요.</p>
+    <p id="transfer-fact-error" class="error" role="alert" hidden></p>
+    <a id="transfer-facts-source" target="_blank" rel="noopener noreferrer">국세청 항목별 설명 열기 ↗</a>
+   </fieldset>
+   <div class="compare-toolbar"><span>금액 단위 · 원</span><button id="load-example" type="button" class="text-button">예시값 불러오기</button></div><div class="scenario-grid">
     <fieldset class="scenario"><legend>기준안 <span>A</span></legend><p>현재 검토하고 있는 조건이에요.</p><div id="a-fields"></div></fieldset>
     <fieldset class="scenario alternative"><legend>비교안 <span>B</span></legend><p>달리 적용해 볼 조건을 입력하세요.</p><div id="b-fields"></div></fieldset>
    </div><div class="compare-submit"><p id="compare-error" class="error" role="alert" hidden></p><p id="compare-state" class="muted" role="status">예시값이에요. 본인 조건에 맞게 수정한 뒤 비교해 주세요.</p><button class="button primary" type="submit">세액 비교하기 <span aria-hidden="true">→</span></button></div></form>

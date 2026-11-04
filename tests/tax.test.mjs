@@ -1,6 +1,44 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {taxFromBase,compareScenarios,calculateScenario,parseAmount,calculateCorporate,calculateVat,compareTax} from '../public/lib/tax.mjs';
+import {transferFactIssue,transferDeductionTotal} from '../public/lib/transfer-check.mjs';
+
+test('공제 중복은 한 안에서 막고 두 안에는 같은 공제를 각각 적용한다',()=>{
+ const item={kind:'lump',amount:'500000000'};
+ const finance={kind:'finance',amount:'100000000'};
+ assert.match(transferDeductionTotal('inheritance',[item,item],{}).issue.message,/두 번/);
+ for(const kind of ['base','personal']){
+  const other={kind,amount:'100000000'};
+  assert.match(transferDeductionTotal('inheritance',[item,other],{}).issue.message,/함께 넣을 수 없어요/);
+  assert.match(transferDeductionTotal('inheritance',[other,item],{}).issue.message,/함께 넣을 수 없어요/);
+ }
+ const baseline=transferDeductionTotal('inheritance',[item],{});
+ const alternative=transferDeductionTotal('inheritance',[item,finance],{});
+ assert.equal(compareTax('inheritance',{year:2026,amount:800000000,deductions:baseline.total},
+  {year:2026,amount:800000000,deductions:alternative.total}).difference,-20000000);
+});
+
+test('사전 내역과 상속재산 분할일을 확인하고 배우자공제의 확인된 예외를 허용한다',()=>{
+ assert.equal(transferFactIssue('inheritance',{},'2026-02-01').field,'priorGifts');
+ const reviewed={priorGifts:'included',priorDeductions:'none',split:'completed'};
+ assert.equal(transferFactIssue('inheritance',reviewed,'2026-02-01').field,'splitDate');
+ assert.equal(transferFactIssue('inheritance',{...reviewed,splitDate:'2026-01-31'},'2026-02-01').field,'splitDate');
+ assert.equal(transferFactIssue('inheritance',{...reviewed,splitDate:'2026-02-02'},'2026-02-01'),null);
+ const spouse=[{kind:'spouse',amount:'500000000'}];
+ assert.equal(transferDeductionTotal('inheritance',spouse,{split:'pending'}).issue.field,'split');
+ assert.equal(transferDeductionTotal('inheritance',spouse,{split:'exception'}).total,500000000);
+});
+
+test('기존 증여공제를 사용했으면 이번 공제액을 남은 한도와 비교한다',()=>{
+ const basic={kind:'basic',amount:'20000000'};
+ const family={kind:'family',amount:'50000000'};
+ const facts={priorDeductions:'used',basic:'20000000',family:'50000000'};
+ assert.equal(transferDeductionTotal('gift',[basic],{priorDeductions:'used'}).issue.field,'basic');
+ assert.match(transferDeductionTotal('gift',[basic],{...facts,basic:'0'}).issue.message,/남은 한도/);
+ assert.equal(transferDeductionTotal('gift',[basic,family],facts).total,70000000);
+ assert.match(transferDeductionTotal('gift',[family,family],facts).issue.message,/두 번/);
+ assert.equal(transferDeductionTotal('gift',[],facts).total,0);
+});
 // 별도의 누진 구간 적분으로 확인. 누진공제 공식을 그대로 복제하지 않음.
 function marginalReference(base){let left=base,last=0,total=0;for(const[upper,rate]of [[14000000,6],[50000000,15],[88000000,24],[150000000,35],[300000000,38],[500000000,40],[1000000000,42],[Infinity,45]]){const portion=Math.max(0,Math.min(left,upper-last));total+=portion*rate;left-=portion;last=upper;if(left<=0)break;}return Math.floor(total/100);}
 test('모든 누진세 경계의 전후와 고액에서 독립 계산식과 일치',()=>{
