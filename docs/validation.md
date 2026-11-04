@@ -139,6 +139,15 @@
 
 ## 배포·공개 결과
 
+### v0.4
+
+- 2026-11-04에 [v0.4.0](https://github.com/JoonseokWon/js-tax-agent/releases/tag/v0.4.0)과 [v0.4.1](https://github.com/JoonseokWon/js-tax-agent/releases/tag/v0.4.1)을 공개했다. 두 ZIP을 인증 없이 내려받아 SHA-256 일치를 확인했다. 각 태그의 GitHub Actions 테스트는 성공했다.
+- Windows 샌드박스에서 esbuild가 상위 경로 읽기 권한 오류를 반환했다. 동일한 테스트를 일반 Windows 계정에서 재실행해 49개 통과와 정적·Worker 빌드를 확인했다. 두 배포의 Worker 소스 트리는 대응하는 공개 Git 태그 트리와 일치했다.
+- [개인용 사이트](https://js-tax-agent.keengiant19.chatgpt.site)에서 로그인 후 2026-10-01 상속세와 2026-09-18 증여세의 시행본 3개와 관련 부칙을 확인했다. 상속세의 사전증여 미확인 안내와 중복 차단, 예시 5,000만원·3,000만원을 확인했다. 모바일 폭에서 가로 넘침 없이 증여세 예시 1,000만원·500만원을 확인했다.
+- v0.4.0 화면의 고정 버전 표시를 발견해 v0.4.1에서 실행 버전을 표시하도록 수정했다. 기존 사이트의 재배포 성공 후 화면에서 v0.4.1과 2026-11-04 법제처 확인일을 확인했다. 생성 AI 실호출과 결제 설정 변경은 수행하지 않았다.
+
+### v0.1
+
 - 공개 저장소 `https://github.com/JoonseokWon/js-tax-agent`의 private=false를 인증 없는 GitHub REST 조회로 확인.
 - 공개 프리릴리스 `https://github.com/JoonseokWon/js-tax-agent/releases/tag/v0.1.0`, draft=false/prerelease=true. 앱 브라우저에서도 제목과 태그/커밋 확인.
 - 실행 ZIP 289,732바이트와 SHA256SUMS 91바이트 업로드. 인증 없이 실제 ZIP 다운로드 후 SHA-256 `44527f4de1ec281bded6a007a9da996c89294547825b34fea5f0a4828f95d669` 일치.
