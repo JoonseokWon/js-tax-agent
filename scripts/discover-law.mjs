@@ -6,11 +6,11 @@ import {LAW_REVIEW,isCalendarDate} from '../public/lib/law-review.mjs';
 const today = new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul'}).format(new Date());
 const [selection='all',date=today,pages='1'] = process.argv.slice(2);
 const taxes = selection==='all'?Object.keys(LAW_REVIEW):[selection];
-const referenceDates = {income:'2025-12-31',corporate:'2026-01-01',vat:'2026-01-02'};
+const referenceDates = {income:'2025-12-31',corporate:'2026-01-01',vat:'2026-01-02',inheritance:'2026-01-02',gift:'2026-01-02'};
 const out = new URL('../outputs/',import.meta.url);
 try {
   if (!process.env.LAW_OPEN_DATA_OC?.trim()) throw new Error('승인된 법제처 API 인증값을 LAW_OPEN_DATA_OC에 설정해 주세요. docs/law-discovery.md를 참고하세요.');
-  if ((date!=='supported'&&!isCalendarDate(date))||taxes.some(tax=>!Object.hasOwn(LAW_REVIEW,tax))) throw new Error('사용법: node scripts/discover-law.mjs [income|corporate|vat|all] [YYYY-MM-DD|supported] [페이지 수]');
+  if ((date!=='supported'&&!isCalendarDate(date))||taxes.some(tax=>!Object.hasOwn(LAW_REVIEW,tax))) throw new Error('사용법: node scripts/discover-law.mjs [income|corporate|vat|inheritance|gift|all] [YYYY-MM-DD|supported] [페이지 수]');
   await mkdir(out,{recursive:true});
   for (const tax of taxes) {
     const file = new URL('law-discovery-'+tax+'.json',out);

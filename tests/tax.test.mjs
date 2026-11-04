@@ -39,3 +39,24 @@ test('일반과세자 부가세는 매입세액이 크면 환급 방향이고 �
  assert.throws(()=>calculateVat({...a,inputTax:'1.5'}),/원 단위/);
  assert.throws(()=>compareTax('unknown',a,b),/세목/);
 });
+
+test('상속세·증여세 과세최저한과 누진구간 경계 양쪽의 산출세액',()=>{
+ const cases=[
+  [499_999,0],[500_000,50_000],
+  [100_000_000,10_000_000],[100_000_100,10_000_020],
+  [500_000_000,90_000_000],[500_000_100,90_000_030],
+  [1_000_000_000,240_000_000],[1_000_000_100,240_000_040],
+  [3_000_000_000,1_040_000_000],[3_000_000_100,1_040_000_050]
+ ];
+ for(const tax of ['inheritance','gift']){
+  const zero={year:2026,amount:0,deductions:1};
+  for(const [base,expected] of cases){
+   const result=compareTax(tax,zero,{year:2026,amount:base+1_000_000,deductions:1_000_000});
+   assert.equal(result.baseline.base,0);
+   assert.equal(result.alternative.base,base);
+   assert.equal(result.difference,expected);
+  }
+  assert.throws(()=>compareTax(tax,{...zero,year:2027},zero),/2026/);
+  assert.throws(()=>compareTax(tax,{...zero,deductions:-1},zero),/원 단위/);
+ }
+});

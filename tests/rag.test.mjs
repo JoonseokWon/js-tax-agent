@@ -59,3 +59,20 @@ test('법인세·부가세의 확인한 회신과 판결은 별도 역사적 근
  }
  assert.equal(answerQuestion('2026-01-15 종합소득세 세율').status,'insufficient');
 });
+
+test('상속세·증여세 질문은 해당 세목의 근거만 사용하고 미수록 범위는 유보',()=>{
+ const inheritance=answerQuestion('2026년 상속세의 기본세율과 계산 순서는 어떻게 되나요?');
+ assert.equal(inheritance.year,2026);
+ assert.ok(inheritance.sources.some(doc=>doc.id==='inheritance-flow'));
+ assert.ok(inheritance.sources.every(doc=>doc.tax==='inheritance'));
+ const gift=answerQuestion('상속세 및 증여세법 제55조의 과세표준은?',{tax:'gift'});
+ assert.ok(gift.sources.some(doc=>doc.id==='gift-base'));
+ assert.ok(gift.sources.every(doc=>doc.tax==='gift'));
+ for(const [tax,question] of [
+  ['gift','2027년 증여세 세율'],['inheritance','가업상속공제 요건'],
+  ['gift','세대생략 증여의 증여세 할증'],['inheritance','상속세 과세표준 판례'],
+  ['inheritance','상속세와 증여세 계산']
+ ]){
+  assert.equal(answerQuestion(question,{tax}).status,'insufficient',question);
+ }
+});

@@ -59,12 +59,18 @@ test('추가 세목의 생성 요청에는 해당 세목 근거만 보내고 불
   sent.push(context);
   return providerResponse(result([context.context[0].id]));
  }});
- for(const [tax,question,name,prefix] of [['corporate','기본세율을 알려주세요','법인세','corp-'],['vat','매입세액 공제 조건은?','부가가치세','vat-']]){
+ const cases=[
+  ['corporate','기본세율을 알려주세요','법인세','corp-'],
+  ['vat','매입세액 공제 조건은?','부가가치세','vat-'],
+  ['inheritance','일괄공제 기준은?','상속세','inheritance-'],
+  ['gift','부모가 자녀에게 증여할 때 공제는?','증여세','gift-']
+ ];
+ for(const [tax,question,name,prefix] of cases){
   const response=await handler(post('/api/ask',{question,tax,mode:'ai'}));
   assert.equal(response.status,200);assert.equal((await response.json()).tax,tax);
   const context=sent.at(-1);assert.equal(context.tax,name);assert.equal(context.calculationYear,2026);
   assert.ok(context.context.length&&context.context.every(d=>d.id.startsWith(prefix)));
  }
  const mismatch=await handler(post('/api/ask',{question:'법인세 세율',tax:'vat',mode:'ai'}));
- assert.equal((await mismatch.json()).status,'insufficient');assert.equal(sent.length,2);
+ assert.equal((await mismatch.json()).status,'insufficient');assert.equal(sent.length,cases.length);
 });

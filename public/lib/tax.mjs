@@ -4,7 +4,9 @@ export const VAT_RATE = 10;
 export const TAX_SCOPES = Object.freeze({
   income:{name:'종합소득세',year:TAX_YEAR,period:'2025년 귀속'},
   corporate:{name:'법인세',year:2026,period:'2026년 개시 · 1년 사업연도'},
-  vat:{name:'부가가치세',year:2026,period:'2026년 · 일반과세자'}
+  vat:{name:'부가가치세',year:2026,period:'2026년 · 일반과세자'},
+  inheritance:{name:'상속세',year:2026,period:'2026년 상속개시 · 일반세율'},
+  gift:{name:'증여세',year:2026,period:'2026년 증여 · 일반세율'}
 });
 // 국세청: 2023~2025년 귀속. 모든 계산은 정수 원, 세율은 정수 %.
 export const BRACKETS = Object.freeze([
@@ -30,6 +32,14 @@ export const CORPORATE_BRACKETS = Object.freeze([
   { limit:20_000_000_000, rate:20, deduction:20_000_000 },
   { limit:300_000_000_000, rate:22, deduction:420_000_000 },
   { limit:Infinity, rate:25, deduction:9_420_000_000 }
+]);
+export const TRANSFER_TAX_MINIMUM = 500_000;
+export const TRANSFER_BRACKETS = Object.freeze([
+  { limit:100_000_000, rate:10, deduction:0 },
+  { limit:500_000_000, rate:20, deduction:10_000_000 },
+  { limit:1_000_000_000, rate:30, deduction:60_000_000 },
+  { limit:3_000_000_000, rate:40, deduction:160_000_000 },
+  { limit:Infinity, rate:50, deduction:460_000_000 }
 ]);
 function progressiveTax(base, brackets) {
   const bracket = brackets.find(b => base <= b.limit);
@@ -63,10 +73,27 @@ export function calculateVat({year,sales,inputTax}) {
   const outputTax = Math.floor(supply * VAT_RATE / 100);
   return {year,sales:supply,inputTax:credit,rate:VAT_RATE,outputTax,tax:outputTax-credit};
 }
+function calculateTransfer(tax,{year,amount,deductions}) {
+  const scope = TAX_SCOPES[tax];
+  if (year !== scope.year) throw new Error(`${scope.period}만 계산할 수 있어요.`);
+  const taxableAmount = parseAmount(amount, `${scope.name} 과세가액`);
+  const eligibleDeductions = parseAmount(deductions, '확인한 공제·수수료 합계');
+  const base = Math.max(0,taxableAmount-eligibleDeductions);
+  const result = base < TRANSFER_TAX_MINIMUM
+    ? {base,rate:0,deduction:0,tax:0}
+    : progressiveTax(base,TRANSFER_BRACKETS);
+  return {year,amount:taxableAmount,deductions:eligibleDeductions,...result};
+}
+const calculators = {
+  corporate:calculateCorporate,
+  vat:calculateVat,
+  inheritance:input=>calculateTransfer('inheritance',input),
+  gift:input=>calculateTransfer('gift',input)
+};
 export function compareTax(tax,a,b) {
   if (tax === 'income') return compareScenarios(a,b);
-  if (tax !== 'corporate' && tax !== 'vat') throw new Error('세목을 선택해 주세요.');
-  const calculate = tax === 'corporate' ? calculateCorporate : calculateVat;
+  if (typeof tax !== 'string' || !Object.hasOwn(calculators,tax)) throw new Error('세목을 선택해 주세요.');
+  const calculate = calculators[tax];
   const baseline=calculate(a), alternative=calculate(b);
   return {baseline,alternative,difference:alternative.tax-baseline.tax};
 }

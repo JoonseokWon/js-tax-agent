@@ -1,5 +1,5 @@
 import {answerQuestion,validateQuestion} from './lib/rag.mjs';
-import {compareTax,BRACKETS,CORPORATE_BRACKETS,TAX_SCOPES,VAT_RATE,parseAmount} from './lib/tax.mjs';
+import {compareTax,BRACKETS,CORPORATE_BRACKETS,TRANSFER_BRACKETS,TAX_SCOPES,VAT_RATE,parseAmount} from './lib/tax.mjs';
 import {LAW_REVIEW,supportedReviewDate} from './lib/law-review.mjs';
 import {corpus,corpusStats} from './data/corpus.mjs';
 const $=s=>document.querySelector(s);
@@ -58,7 +58,9 @@ $('#clear-question').addEventListener('click',()=>{requestNumber++;setBusy(false
 const suggestedQuestions={
  income:[['개업 전 비용의 귀속','사업자등록 전 비용을 다음 과세기간에 공제할 수 있나요?'],['초과인출금 이자 판례','초과인출금 지급이자 판례의 판단과 한계를 알려주세요.'],['2025년 기본세율','2025년 종합소득세 세율은 어떻게 되나요?']],
  corporate:[['2026년 기본세율','2026년 개시 사업연도의 법인세 세율은 어떻게 되나요?'],['과세표준의 뜻','법인세 과세표준과 회계이익은 어떻게 다른가요?']],
- vat:[['납부와 환급','일반과세자 부가세는 매출세액과 매입세액으로 어떻게 계산하나요?'],['매입세액 공제','부가세 매입세액 공제에 필요한 조건은 무엇인가요?']]
+ vat:[['납부와 환급','일반과세자 부가세는 매출세액과 매입세액으로 어떻게 계산하나요?'],['매입세액 공제','부가세 매입세액 공제에 필요한 조건은 무엇인가요?']],
+ inheritance:[['기본세율','2026년 상속세의 기본세율과 계산 순서는 어떻게 되나요?'],['일괄공제와 배우자공제','상속세 일괄공제와 배우자 상속공제의 기준은 무엇인가요?']],
+ gift:[['기본세율','2026년 증여세의 기본세율과 계산 순서는 어떻게 되나요?'],['부모가 자녀에게 증여','부모가 자녀에게 증여할 때 증여재산공제의 기준은 무엇인가요?']]
 };
 function renderAskTax(){
  const tax=$('#ask-tax').value;
@@ -72,6 +74,11 @@ function renderAskTax(){
 }
 $('#ask-tax').addEventListener('change',()=>{renderAskTax();$('#question').dispatchEvent(new Event('input'));});
 const progressiveFormula='산출세액 = 과세표준 × 적용 구간 세율 − 누진공제 · 원 미만 버림';
+const transferComparison={
+ rows:[['과세가액','amount'],['확인한 공제·수수료','deductions'],['과세표준','base']],
+ brackets:TRANSFER_BRACKETS,highest:'30억원 초과',
+ formula:'과세표준 = 과세가액 − 확인한 공제·수수료 (최저 0원). '+progressiveFormula+'. 과세표준 50만원 미만은 세액 0원.'
+};
 const comparisons={
  income:{fields:[['revenue','연간 총수입',80000000,80000000],['expenses','필요경비',20000000,30000000],['deductions','소득공제 합계',1500000,1500000]],
   rows:[['총수입','revenue'],['필요경비','expenses'],['소득금액','income'],['소득공제','deductions'],['과세표준','base']],brackets:BRACKETS,highest:'10억원 초과',
@@ -83,7 +90,13 @@ const comparisons={
  vat:{fields:[['sales','과세 매출 공급가액 (부가세 제외)',100000000,100000000],['inputTax','공제 가능 매입세액',7000000,12000000]],
   rows:[['매출 공급가액','sales'],['매출세액','outputTax'],['공제 가능 매입세액','inputTax']],
   title:'2026년 · 일반과세자 · 국내 10% 과세 거래',scope:'간이과세·영세율·면세·공통매입세액 안분·가산세·기납부세액은 제외해요.',
-  notes:'두 안에는 같은 신고 대상 기간의 금액을 넣어 주세요. 매입 금액 전체가 아니라 공제 가능한 부가세액을 입력해요.',formula:'매출 공급가액 × '+VAT_RATE+'% (원 미만 버림) − 공제 가능 매입세액',source:'vat-flow'}
+  notes:'두 안에는 같은 신고 대상 기간의 금액을 넣어 주세요. 매입 금액 전체가 아니라 공제 가능한 부가세액을 입력해요.',formula:'매출 공급가액 × '+VAT_RATE+'% (원 미만 버림) − 공제 가능 매입세액',source:'vat-flow'},
+ inheritance:{...transferComparison,fields:[['amount','상속세 과세가액',800000000,800000000],['deductions','확인한 상속공제·수수료 합계',500000000,600000000]],
+  title:'2026년 상속개시 · 일반 상속세 산출세액',scope:'채무·사전증여를 반영한 과세가액과 한도 확인을 마친 공제·수수료를 넣어 주세요. 할증·세액공제·가산세는 제외해요.',
+  notes:'과세가액은 상속재산 평가와 합산·차감 항목을 반영해 구해요. 일괄공제·배우자공제 등은 상속인 구성과 적용 한도를 확인한 뒤 합산해 주세요.',source:'inheritance-flow'},
+ gift:{...transferComparison,fields:[['amount','증여세 과세가액',150000000,100000000],['deductions','확인한 증여 공제·수수료 합계',50000000,50000000]],
+  title:'2026년 증여 · 일반 증여세 산출세액',scope:'합산 대상 증여를 반영한 과세가액과 한도 확인을 마친 공제·수수료를 넣어 주세요. 특례·할증·세액공제·가산세는 제외해요.',
+  notes:'관계에 따른 증여재산공제 한도와 최근 10년간 적용한 공제액을 확인하세요. 혼인·출산 공제는 요건과 한도를 별도로 확인해 주세요.',source:'gift-flow'}
 };
 const comparisonValues={};
 const reviewDates={};

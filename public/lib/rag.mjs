@@ -1,14 +1,20 @@
 import {corpus,VERIFIED_AT} from '../data/corpus.mjs';
 import {TAX_SCOPES} from './tax.mjs';
-const excluded = /양도소득|상속세|증여세|가상자산|비트코인|취득세|부양가족|연금저축|노란우산|세액공제/;
-const namedTaxes={income:/종합소득세|종소세/,corporate:/법인세/,vat:/부가가치세|부가세/};
+const excluded = /양도소득|가상자산|비트코인|취득세|부양가족|연금저축|노란우산|세액공제/;
+const namedTaxes={income:/종합소득세|종소세/,corporate:/법인세/,vat:/부가가치세|부가세/,inheritance:/상속세/,gift:/증여세/};
 const extendedTopics={
  'corp-rates':/세율|누진|구간|산출세액|얼마|과세표준.*(?:곱|계산)/,
  'corp-law55':/세율|사업연도|제\s*55\s*조|산출세액/,
  'corp-base':/과세표준|세무조정|회계이익|익금|손금|소득금액|제\s*(?:13|14)\s*조/,
  'vat-flow':/매출세액|공급가액|공급대가|매입세액|납부|환급|계산|세율/,
  'vat-credit':/매입세액|세금계산서|공급시기|제\s*38\s*조/,
- 'vat-noncredit':/매입세액|세금계산서|불공제|증빙|제\s*39\s*조/
+ 'vat-noncredit':/매입세액|세금계산서|불공제|증빙|제\s*39\s*조/,
+ 'inheritance-flow':/세율|누진|과세가액|사전\s*증여|합산|계산|산출세액|제\s*(?:13|26)\s*조/,
+ 'inheritance-base':/과세표준|과세\s*최저한|50\s*만|수수료|제\s*25\s*조/,
+ 'inheritance-deduction':/공제|배우자|금융재산|동거주택/,
+ 'gift-flow':/세율|누진|과세가액|사전\s*증여|합산|계산|산출세액|제\s*(?:47|56)\s*조/,
+ 'gift-base':/과세표준|과세\s*최저한|50\s*만|수수료|제\s*55\s*조/,
+ 'gift-deduction':/공제|배우자|직계|부모|자녀|미성년|혼인|출산|입양|제\s*53\s*조/
 };
 const historicalTopics={
  'corp-court-2007du12422':/판매부대|판매촉진|대리점|통상.*(?:비용|손비)/,
@@ -28,7 +34,8 @@ export function validateQuestion(q) {
 function terms(text){return text.toLowerCase().match(/[가-힣a-z0-9]+/g)||[];}
 function selectTax(q,tax){
  if(tax!==undefined&&(typeof tax!=='string'||!Object.hasOwn(TAX_SCOPES,tax)))throw new Error('세목을 선택해 주세요.');
- const named=Object.keys(namedTaxes).filter(key=>namedTaxes[key].test(q));
+ const subject=tax===undefined?q:q.replace(/상속세\s*및\s*증여세법/g,'');
+ const named=Object.keys(namedTaxes).filter(key=>namedTaxes[key].test(subject));
  return {tax:tax??named[0]??'income',conflict:named.length>1||(tax!==undefined&&named.length===1&&named[0]!==tax)};
 }
 export function retrieve(question,{tax,year,limit=5}={}){
@@ -51,7 +58,8 @@ export function retrieve(question,{tax,year,limit=5}={}){
  if(tax!=='income'){
   if(exact&&!otherYears)return [{...exact,score:100}];
   const unsupported=/신고\s*(?:기한|방법)|간이과세|영세율|면세|안분|가산세|감면|지방소득세|조특법|특수관계|외국법인|비영리|단기\s*사업연도|소규모\s*법인|의제매입|신용카드.*공제/;
-  if(otherYears||unsupported.test(q)||unknownNumber.test(q))return [];
+  const unsupportedTransfer=(tax==='inheritance'||tax==='gift')&&/가업|영농|세대\s*생략|특례|부담부|증여\s*의제|비거주자/.test(q);
+  if(otherYears||unsupported.test(q)||unsupportedTransfer||unknownNumber.test(q))return [];
   const matches=scopedCorpus.filter(d=>d.referenceOnly&&historicalTopics[d.id].test(q)&&
    (!onlyCases||d.kind==='판례')&&(!onlyRulings||d.kind==='질의회신'));
   if(onlyCases||onlyRulings)return matches.slice(0,maximum);
@@ -86,7 +94,9 @@ export function answerQuestion(question,{tax}={}){
  const next={
   income:'2025년 사업소득의 기본세율·계산 순서 또는 수록한 경비 사례를 질문해 주세요.',
   corporate:'2026년 개시 사업연도의 일반 법인세율이나 세무조정 후 과세표준을 질문해 주세요.',
-  vat:'2026년 일반과세자의 매출세액·매입세액·환급 계산을 질문해 주세요.'
+  vat:'2026년 일반과세자의 매출세액·매입세액·환급 계산을 질문해 주세요.',
+  inheritance:'2026년 일반 상속의 기본세율, 과세표준 또는 상속공제 기준을 질문해 주세요.',
+  gift:'2026년 일반 증여의 기본세율, 과세표준 또는 증여재산공제 기준을 질문해 주세요.'
  };
  if(!sources.length)return {...base,status:'insufficient',
    message:'수록한 자료만으로는 답하기 어려워요.',next:selected.conflict?'질문과 같은 세목을 선택하고 한 세목씩 나누어 질문해 주세요.':next[selected.tax]};
