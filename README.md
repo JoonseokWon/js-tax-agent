@@ -4,7 +4,7 @@
 
 [GitHub 저장소](https://github.com/JoonseokWon/js-tax-agent) · [릴리스 다운로드](https://github.com/JoonseokWon/js-tax-agent/releases) · [호스팅 체험판](https://js-tax-agent.keengiant19.chatgpt.site) (소유자 개인 접근 권한, ChatGPT 로그인 필요)
 
-현재 소스는 **v0.4.0**입니다. 세목별 공식 자료 검색, 법령 시점 검토와 A/B 비교를 제공합니다. 자료 요약과 세액 비교는 키 없이 사용할 수 있습니다. 생성 AI에는 서버 API 키와 공급자의 사용 가능 한도가 필요하며, 새 세목의 실제 생성 답변 평가는 진행하지 않았습니다.
+현재 소스는 **v0.4.1**입니다. 세목별 공식 자료 검색, 법령 시점 검토와 A/B 비교를 제공합니다. 자료 요약과 세액 비교는 키 없이 사용할 수 있습니다. 생성 AI에는 서버 API 키와 공급자의 사용 가능 한도가 필요하며, 새 세목의 실제 생성 답변 평가는 진행하지 않았습니다.
 
 ![로컬에서 검증한 AI 판례 답변](docs/screenshots/v0.2/desktop-ai.png)
 

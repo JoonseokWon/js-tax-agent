@@ -459,7 +459,14 @@ function downloadMemo({answer,tax=answer?.tax,comparison,date}){
  const link=document.createElement('a');link.href=url;link.download='JS-Tax-Agent-검토메모.md';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 async function refreshRuntime(){
- try{const response=await fetch('./runtime.json',{signal:AbortSignal.timeout(4000)});if(!response.ok)throw new Error();const config=await response.json();aiAvailable=!!config.aiAvailable;$('#ask-ai').textContent=aiAvailable?'생성 AI로 답변 보기':'AI 설정 방법';$('#ai-status').textContent=aiAvailable?(config.lastVerifiedAt?'실제 AI 응답 확인됨 · ':'키 설정됨 · 실연결 확인 전 · ')+(config.aiModel||'설정 모델'):'생성 AI 키 미설정 · 자료 요약은 바로 이용할 수 있어요.';return config;}
+ try{
+  const response=await fetch('./runtime.json',{signal:AbortSignal.timeout(4000)});if(!response.ok)throw new Error();
+  const config=await response.json(),version=$('#app-version');
+  if(config.version){version.textContent='v'+config.version;version.hidden=false;}
+  aiAvailable=!!config.aiAvailable;$('#ask-ai').textContent=aiAvailable?'생성 AI로 답변 보기':'AI 설정 방법';
+  $('#ai-status').textContent=aiAvailable?(config.lastVerifiedAt?'실제 AI 응답 확인됨 · ':'키 설정됨 · 실연결 확인 전 · ')+(config.aiModel||'설정 모델'):'생성 AI 키 미설정 · 자료 요약은 바로 이용할 수 있어요.';
+  return config;
+ }
  catch{$('#ai-status').textContent='AI 설정 상태를 읽지 못했어요. 서버 연결을 확인해 주세요.';return null;}
 }
 $('#check-ai').addEventListener('click',async()=>{

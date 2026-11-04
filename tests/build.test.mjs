@@ -4,6 +4,7 @@ import {spawnSync} from 'node:child_process';
 import {readFile,writeFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {createHash} from 'node:crypto';
+import appPackage from '../package.json' with {type:'json'};
 test('정적 빌드는 재현 가능하고 이전 생성 파일을 포함하지 않음',async()=>{
  const root=fileURLToPath(new URL('../',import.meta.url));
  const build=()=>{const p=spawnSync(process.execPath,['scripts/build.mjs'],{cwd:root,encoding:'utf8',windowsHide:true});assert.equal(p.status,0,p.stderr);};
@@ -19,7 +20,7 @@ test('Sites 단일 Worker 번들은 자산·동적 API·로그인 검사 계약�
  const worker=(await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'))).default;
  const env={OPENAI_API_KEY:'test-credential-not-in-bundle'};
  const home=await worker.fetch(new Request('https://tax.example/'),env);assert.equal(home.status,200);assert.match(await home.text(),/source-kind/);
- const runtime=await worker.fetch(new Request('https://tax.example/runtime.json'),env);const status=await runtime.text();assert.equal(JSON.parse(status).runtime,'hosted');assert.equal(JSON.parse(status).version,'0.4.0');assert.ok(!status.includes(env.OPENAI_API_KEY));
+ const runtime=await worker.fetch(new Request('https://tax.example/runtime.json'),env);const status=await runtime.text();assert.equal(JSON.parse(status).runtime,'hosted');assert.equal(JSON.parse(status).version,appPackage.version);assert.ok(!status.includes(env.OPENAI_API_KEY));
  const review=await worker.fetch(new Request('https://tax.example/api/law-review'),env);
  assert.equal(review.status,200);const snapshot=await review.json();
  assert.deepEqual(snapshot,{inheritance:{checkedOn:'2026-11-04',complete:true,bodyAvailable:true,amendments:[]},
