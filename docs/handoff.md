@@ -11,3 +11,4 @@
 - 관련 문서: spec.md, plan.md, todo.md, design.md, sources.md, validation.md, law-discovery.md, api-key-setup.md.
 - 계정별 설정·운영 진단의 상세 인계는 Git에서 제외된 `outputs/hosting-handoff-private.md`와 `outputs/hosting-validation-private.md`에 로컬 전용으로 보관한다.
 - 다음: 법제처 이용 승인 후 기준일을 바꿔 첫 수집을 검증하고, 변경 후보의 조문·부칙을 비교한다. 생성 AI 실검증은 무료 크레딧 조건이 충족될 때 진행한다.
+- 법제처 승인 후 프로젝트 폴더의 `collect-law.ps1`로 인증값을 숨김 입력하고 첫 기준 기록을 만든다. 승인 전 공개 예제 연결 확인 및 운영 재개 절차는 Git에서 제외된 로컬 기록에 둔다.

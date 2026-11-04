@@ -45,3 +45,11 @@ test('공식 목록을 페이지별로 읽어 중복을 제거하며 후보 파�
  assert.ok(!JSON.stringify(report).includes('test-oc-value'));
  assert.throws(()=>parseLawList({error:'test-oc-value'},'prec'),/공식 목록 형식/);
 });
+
+test('DNS 실패는 인증 오류와 구분하고 원래 요청 URL과 인증값을 노출하지 않는다',async()=>{
+ const oc='test-oc-not-for-output';
+ await assert.rejects(discoverTaxLaw({tax:'vat',date:'2026-01-02',today:'2026-11-04',maxPages:1,oc,
+  fetchImpl:async url=>{
+   throw new Error(String(url),{cause:{code:'ENOTFOUND'}});
+  }}),error=>error.message.includes('DNS')&&!error.message.includes(oc));
+});
