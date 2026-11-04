@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {EventEmitter} from 'node:events';
+import {Readable} from 'node:stream';
 import {changedLaws,discoverTaxLaw,parseLawList,resolveVersions} from '../lib/law-discovery.mjs';
+import {createLawFetch} from '../lib/law-network.mjs';
 import {supportedReviewDate} from '../public/lib/law-review.mjs';
 
 test('시행일에 맞는 법령과 시행예정본을 분리하고 동시 시행본을 모두 보여준다',()=>{
@@ -52,4 +55,40 @@ test('DNS 실패는 인증 오류와 구분하고 원래 요청 URL과 인증값
   fetchImpl:async url=>{
    throw new Error(String(url),{cause:{code:'ENOTFOUND'}});
   }}),error=>error.message.includes('DNS')&&!error.message.includes(oc));
+});
+
+test('Windows DNS 실패 시 DNS 서비스에는 호스트명만 보내고 공식 주소의 TLS를 유지한다',async()=>{
+ const url=new URL('https://www.law.go.kr/DRF/lawSearch.do?OC=test-only-credential');
+ let checks=0,dnsCalls=0,clock=0,status=200;
+ const request=createLawFetch({
+  now:()=>clock,
+  lookupImpl:async()=>{checks++;throw Object.assign(new Error(),{code:'EAI_AGAIN'});},
+  fetchImpl:async(dnsUrl,options)=>{
+   dnsCalls++;
+   assert.equal(dnsUrl,'https://cloudflare-dns.com/dns-query?name=www.law.go.kr&type=A');
+   assert.equal(options.redirect,'error');
+   return Response.json({Status:0,Answer:[{type:1,data:'192.0.2.1',TTL:30}]});
+  },
+  getImpl:(actual,options,callback)=>{
+   assert.equal(actual.href,url.href);
+   assert.equal(options.servername,'www.law.go.kr');assert.equal(options.rejectUnauthorized,true);
+   options.lookup(actual.hostname,{all:false},(error,address,family)=>{
+    assert.equal(error,null);assert.equal(address,'192.0.2.1');assert.equal(family,4);
+   });
+   const reply=Readable.from([Buffer.from('{}')]);
+   Object.assign(reply,{statusCode:status,headers:{}});
+   callback(reply);
+   return new EventEmitter();
+  }
+ });
+ assert.deepEqual(await (await request(url)).json(),{});
+ await (await request(url)).json();
+ assert.equal(checks,1);assert.equal(dnsCalls,1);
+ clock=30_001;
+ status=302;
+ await assert.rejects(request(url),/주소를 변경/);
+ assert.equal(checks,2);assert.equal(dnsCalls,2);
+ await assert.rejects(request(new URL('https://different.example/DRF/lawSearch.do')),/HTTPS 경로/);
+ assert.throws(()=>parseLawList({result:'사용자 정보 검증에 실패하였습니다.',msg:'test-only-credential'},'prec'),
+  error=>error.message.includes('사용자 검증')&&!error.message.includes('test-only-credential'));
 });
