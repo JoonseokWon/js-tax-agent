@@ -1,5 +1,18 @@
 # 수록 자료와 근거 관리
 
+## 상속세와 증여세 원문 (2026-11-04 확인)
+
+| 세목 | 공식 원문 | 확인한 범위 |
+| --- | --- | --- |
+| 상속세 | [상증세법 제19조](https://www.law.go.kr/lsLinkCommonInfo.do?chrClsCd=010202&lsJoLnkSeq=1031181571) | 현행 배우자 상속공제의 분할기한과 한도 |
+| 상속세 | [서면-2015-상속증여-2299](https://taxlaw.nts.go.kr/qt/USEQTA002P.do?ntstDcmId=010000000000515087) | 배우자의 실제 상속액과 당시의 가업상속공제 관계 |
+| 상속세 | [대법원 2023두44061](https://www.law.go.kr/LSW/precInfoP.do?precSeq=237913) | 구법의 분할신고와 배우자 명의 등기의 구별 |
+| 증여세 | [상증세법 제53조의2](https://www.law.go.kr/lsLinkCommonInfo.do?chrClsCd=010202&lsJoLnkSeq=1017648003), [시행규칙 제15조](https://law.go.kr/LSW/lsLinkCommonInfo.do?lspttninfSeq=113937) | 혼인·출산 공제의 제외 대상과 유사재산 비교 요건 |
+| 증여세 | [서면-2024-상속증여-1717](https://taxlaw.nts.go.kr/qt/USEQTA002P.do?ntstDcmId=200000000000017338) | 자녀의 대여금 채무면제에 대한 혼인 공제와 일반 공제의 구별 |
+| 증여세 | [대법원 2022두55606](https://www.law.go.kr/LSW/precInfoP.do?precSeq=603557) | 증여일에 이미 고시된 공동주택가격을 기준으로 본 판결 |
+
+회신의 요지·회신·상세내용과 판결의 판시사항·주문·이유를 확인했다. 회신과 판결은 답변과 보관함에서 역사적 참고 사례로 표시한다.
+
 ## v0.3 추가 원문 (2026-11-04 확인)
 
 | 세목 | 공식 원문 | 확인한 범위 |

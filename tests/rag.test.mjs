@@ -27,7 +27,7 @@ test('대학원·증빙·차입금·초과인출금 사례 검색 평가',()=>{
  for(const[q,id]of [['강사 대학원 등록금 질의회신','nts-2015-0179'],['누락 수입 대응 필요경비 입증 판례','court-2001du4399'],['임대사업 대출이자 판례','court-2009du11874'],['초과인출금 가사관련경비 추정 판례','court-2022du32382']])assert.ok(retrieve(q).some(s=>s.id===id),q);
 });
 test('역사적 회신·판례는 계산 귀속연도와 구분하고 번호·사실·한계가 필수',()=>{
- const records=corpus.filter(d=>d.referenceOnly);assert.equal(records.length,10);
+ const records=corpus.filter(d=>d.referenceOnly);assert.equal(records.length,14);
  for(const d of records){assert.deepEqual(d.years,[]);assert.ok(d.number&&d.issuedAt&&d.facts&&d.limitations&&d.sourceLocation);}
  const caseDoc=records.find(d=>d.id==='court-2022du32382');assert.equal(caseDoc.outcome,'파기환송');
  const ruling=records.find(d=>d.id==='nts-2024-0703');assert.equal(ruling.issuedAt,'2025-07-18');assert.ok(ruling.facts.includes('2022'));
@@ -75,4 +75,18 @@ test('상속세·증여세 질문은 해당 세목의 근거만 사용하고 미
  ]){
   assert.equal(answerQuestion(question,{tax}).status,'insufficient',question);
  }
+});
+
+test('상증세 답변은 현행 근거와 검증한 회신·판례를 구분한다',()=>{
+ const spouse=retrieve('배우자 상속공제의 상속재산 분할기한은?',{tax:'inheritance'});
+ assert.ok(spouse.some(doc=>doc.id==='inheritance-spouse'&&doc.summary.includes('9개월')));
+ assert.ok(spouse.some(doc=>doc.number==='2023두44061'&&doc.referenceOnly));
+ const inheritanceRulings=retrieve('배우자 상속공제 국세청 회신',{tax:'inheritance'});
+ assert.deepEqual(inheritanceRulings.map(doc=>doc.number),['서면-2015-상속증여-2299']);
+ const gift=retrieve('자녀에게 빌려준 돈을 면제하면 혼인 증여재산공제를 받을 수 있나요?',{tax:'gift'});
+ assert.deepEqual(gift.map(doc=>doc.id),['gift-deduction','gift-nts-2024-1717']);
+ assert.deepEqual(retrieve('아파트 증여세 유사재산 평가 판례').map(doc=>doc.number),['2022두55606']);
+ assert.deepEqual(retrieve('서면-2024-상속증여-1717 판단은?',{tax:'gift'}).map(doc=>doc.number),['서면-2024-상속증여-1717']);
+ assert.deepEqual(retrieve('2023두440610 판례',{tax:'inheritance'}),[]);
+ assert.deepEqual(retrieve('2022두55606 판례',{tax:'inheritance'}),[]);
 });

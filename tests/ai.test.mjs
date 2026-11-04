@@ -62,14 +62,15 @@ test('추가 세목의 생성 요청에는 해당 세목 근거만 보내고 불
  const cases=[
   ['corporate','기본세율을 알려주세요','법인세','corp-'],
   ['vat','매입세액 공제 조건은?','부가가치세','vat-'],
-  ['inheritance','일괄공제 기준은?','상속세','inheritance-'],
-  ['gift','부모가 자녀에게 증여할 때 공제는?','증여세','gift-']
+  ['inheritance','배우자 상속공제 판례는?','상속세','inheritance-','2023두44061'],
+  ['gift','혼인 증여재산공제의 채무면제 회신은?','증여세','gift-','서면-2024-상속증여-1717']
  ];
- for(const [tax,question,name,prefix] of cases){
+ for(const [tax,question,name,prefix,number] of cases){
   const response=await handler(post('/api/ask',{question,tax,mode:'ai'}));
   assert.equal(response.status,200);assert.equal((await response.json()).tax,tax);
   const context=sent.at(-1);assert.equal(context.tax,name);assert.equal(context.calculationYear,2026);
   assert.ok(context.context.length&&context.context.every(d=>d.id.startsWith(prefix)));
+  if(number)assert.ok(context.context.some(d=>d.number===number&&d.referenceOnly&&d.limitations));
  }
  const mismatch=await handler(post('/api/ask',{question:'법인세 세율',tax:'vat',mode:'ai'}));
  assert.equal((await mismatch.json()).status,'insufficient');assert.equal(sent.length,cases.length);

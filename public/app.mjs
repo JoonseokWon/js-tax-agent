@@ -1,6 +1,6 @@
 import {answerQuestion,validateQuestion} from './lib/rag.mjs';
 import {compareTax,BRACKETS,CORPORATE_BRACKETS,TRANSFER_BRACKETS,TAX_SCOPES,VAT_RATE,parseAmount} from './lib/tax.mjs';
-import {LAW_REVIEW,supportedReviewDate} from './lib/law-review.mjs';
+import {LAW_REVIEW,TRANSFER_LAW_BASELINE,supportedReviewDate} from './lib/law-review.mjs';
 import {corpus,corpusStats} from './data/corpus.mjs';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -59,8 +59,8 @@ const suggestedQuestions={
  income:[['개업 전 비용의 귀속','사업자등록 전 비용을 다음 과세기간에 공제할 수 있나요?'],['초과인출금 이자 판례','초과인출금 지급이자 판례의 판단과 한계를 알려주세요.'],['2025년 기본세율','2025년 종합소득세 세율은 어떻게 되나요?']],
  corporate:[['2026년 기본세율','2026년 개시 사업연도의 법인세 세율은 어떻게 되나요?'],['과세표준의 뜻','법인세 과세표준과 회계이익은 어떻게 다른가요?']],
  vat:[['납부와 환급','일반과세자 부가세는 매출세액과 매입세액으로 어떻게 계산하나요?'],['매입세액 공제','부가세 매입세액 공제에 필요한 조건은 무엇인가요?']],
- inheritance:[['기본세율','2026년 상속세의 기본세율과 계산 순서는 어떻게 되나요?'],['일괄공제와 배우자공제','상속세 일괄공제와 배우자 상속공제의 기준은 무엇인가요?']],
- gift:[['기본세율','2026년 증여세의 기본세율과 계산 순서는 어떻게 되나요?'],['부모가 자녀에게 증여','부모가 자녀에게 증여할 때 증여재산공제의 기준은 무엇인가요?']]
+ inheritance:[['기본세율','2026년 상속세의 기본세율과 계산 순서는 어떻게 되나요?'],['일괄공제와 배우자공제','상속세 일괄공제와 배우자 상속공제의 기준은 무엇인가요?'],['배우자공제 판례','배우자 상속공제에서 상속재산 분할을 다룬 판례가 있나요?']],
+ gift:[['기본세율','2026년 증여세의 기본세율과 계산 순서는 어떻게 되나요?'],['부모가 자녀에게 증여','부모가 자녀에게 증여할 때 증여재산공제의 기준은 무엇인가요?'],['채무면제와 혼인 공제','자녀에게 빌려준 돈을 면제하면 혼인 증여재산공제를 받을 수 있나요?']]
 };
 function renderAskTax(){
  const tax=$('#ask-tax').value;
@@ -133,6 +133,12 @@ function renderLawReview(tax){
  const law=$('#review-law-link');
  law.href='https://www.law.go.kr/LSW/lsInfoP.do?lsId='+review.lawId;
  law.textContent=review.lawName+' '+review.articles+' · 원문과 연혁 열기 ↗';
+ const versions=$('#review-versions');
+ versions.hidden=tax!=='inheritance'&&tax!=='gift';
+ if(!versions.hidden){
+  const {checkedOn,versions:entries}=TRANSFER_LAW_BASELINE;
+  versions.innerHTML=`<p><strong>법제처 수집일 ${checkedOn} 기준 시행본</strong></p><ul>${entries.map(({label,date,id})=>`<li><a href="https://www.law.go.kr/LSW/lsInfoP.do?lsiSeq=${id}" target="_blank" rel="noopener noreferrer">${label} · ${date} 시행 ↗</a></li>`).join('')}</ul>`;
+ }
  $('#review-evidence').textContent=review.evidence;
  const valid=!date||supportedReviewDate(tax,date);
  if(valid)input.removeAttribute('aria-invalid');else input.setAttribute('aria-invalid','true');

@@ -12,15 +12,21 @@ const extendedTopics={
  'inheritance-flow':/세율|누진|과세가액|사전\s*증여|합산|계산|산출세액|제\s*(?:13|26)\s*조/,
  'inheritance-base':/과세표준|과세\s*최저한|50\s*만|수수료|제\s*25\s*조/,
  'inheritance-deduction':/공제|배우자|금융재산|동거주택/,
+ 'inheritance-spouse':/배우자\s*(?:상속\s*)?공제|상속\s*재산\s*분할|분할\s*기한|제\s*19\s*조/,
  'gift-flow':/세율|누진|과세가액|사전\s*증여|합산|계산|산출세액|제\s*(?:47|56)\s*조/,
  'gift-base':/과세표준|과세\s*최저한|50\s*만|수수료|제\s*55\s*조/,
- 'gift-deduction':/공제|배우자|직계|부모|자녀|미성년|혼인|출산|입양|제\s*53\s*조/
+ 'gift-deduction':/공제|배우자|직계|부모|자녀|미성년|혼인|출산|입양|채무\s*면제|제\s*53\s*조/,
+ 'gift-home-value':/매매\s*사례|유사\s*(?:재산|아파트)|공동\s*주택\s*가격|아파트.*(?:시가|평가)/
 };
 const historicalTopics={
  'corp-court-2007du12422':/판매부대|판매촉진|대리점|통상.*(?:비용|손비)/,
  'corp-nts-2020-1478':/판매.*위탁|성과\s*보상|실비|명절\s*선물/,
  'vat-court-2023du41314':/실제\s*공급자|명의|거래\s*당사자|사실과\s*다른/,
- 'vat-nts-2019-4175':/지연\s*(?:수취|발급)|늦게|등록\s*전|인테리어/
+ 'vat-nts-2019-4175':/지연\s*(?:수취|발급)|늦게|등록\s*전|인테리어/,
+ 'inheritance-nts-2015-2299':/배우자\s*(?:상속\s*)?공제|배우자.*실제\s*상속/,
+ 'inheritance-court-2023du44061':/배우자\s*(?:상속\s*)?공제|상속\s*재산\s*분할|직접\s*이전\s*등기/,
+ 'gift-nts-2024-1717':/채무\s*면제|대여금.*면제|빌려준.*(?:면제|탕감)/,
+ 'gift-court-2022du55606':extendedTopics['gift-home-value']
 };
 const aliases=[['경비',['경비','비용','영수증','증빙']],['세율',['세율','누진','구간']],['소득공제',['소득공제','인적공제']],['신고',['신고','기한','언제','마감']],['납부',['환급','납부','원천징수']]];
 const topicRules={startup:/사업자\s*등록|등록\s*전|개업|창업|사업\s*시작|콘텐츠|유튜브/,education:/교육비|대학원|등록금|강사/,evidence:/증빙|입증|누락\s*수입|실지조사|추계/,interest:/차입금|대출\s*이자|지급이자|초과인출금|가사관련경비/,household:/가사관련경비|초과인출금/,timing:/귀속\s*(시기|연도)|이전\s*과세기간|비용\s*이월|수익\s*비용\s*대응/,depreciation:/감가상각|고정자산|가구|비품/};
@@ -53,7 +59,7 @@ export function retrieve(question,{tax,year,limit=5}={}){
  const onlyRulings=/질의\s*회신|국세청\s*회신|서면/.test(q)&&!/판례/.test(q);
  const otherYears=[...q.matchAll(/(?:^|[^\d])(20\d{2})(?=\s*년|[./-]\d{1,2}(?:[./-]|$)|\s*(?:$|귀속|사업연도|과세기간|세율))/g)].some(m=>Number(m[1])!==year);
  const unknownNumber=/\d{2,4}(?:두|누|구합|구단)\d+|서면[-\s]\d{4}[-\s]/;
- const exact=scopedCorpus.find(d=>d.number&&normalized.includes(normalizeNumber(d.number.split(' [')[0])));
+ const exact=scopedCorpus.find(d=>d.number&&new RegExp('(?<![0-9])'+normalizeNumber(d.number.split(' [')[0])+'(?![0-9])').test(normalized));
  if(excluded.test(q))return [];
  if(tax!=='income'){
   if(exact&&!otherYears)return [{...exact,score:100}];
@@ -78,9 +84,7 @@ export function retrieve(question,{tax,year,limit=5}={}){
    let score=tags.length*3;
    for(const t of expanded) if(t.length>1 && d.title.includes(t))score+=2;
    const matchingTopics=(d.topics||[]).filter(t=>topics.includes(t));
-   const exactNumber=d.number&&normalized.includes(normalizeNumber(d.number.split(' [')[0]));
-   if(exactNumber)score+=100;
-   if(d.referenceOnly){if(topics.length&&!matchingTopics.length&&!exactNumber)score=0;else score+=matchingTopics.length*12;}
+   if(d.referenceOnly){if(topics.length&&!matchingTopics.length)score=0;else score+=matchingTopics.length*12;}
    return {...d,score};
  }).filter(d=>d.score>=3).sort((a,b)=>b.score-a.score||a.id.localeCompare(b.id));
  const results=ranked.slice(0,maximum);

@@ -1,5 +1,14 @@
 import {TAX_SCOPES} from './tax.mjs';
 
+export const TRANSFER_LAW_BASELINE = {
+  checkedOn:'2026-11-04',
+  versions:[
+    {label:'법률', date:'2026-01-02', id:'276123'},
+    {label:'시행령', date:'2026-10-01', id:'290845'},
+    {label:'시행규칙', date:'2026-03-20', id:'284609'}
+  ]
+};
+
 export const LAW_REVIEW = {
   income:{lawId:'001565',lawName:'소득세법',articles:'제27조·제55조 및 부칙',dateLabel:'소득 귀속 기준일',
     evidence:'수입과 지출의 귀속연도, 사업 관련성, 장부와 거래 증빙을 확인하세요.'},
