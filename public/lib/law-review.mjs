@@ -1,13 +1,6 @@
 import {TAX_SCOPES} from './tax.mjs';
-
-export const TRANSFER_LAW_BASELINE = {
-  checkedOn:'2026-11-04',
-  versions:[
-    {label:'법률', date:'2026-01-02', id:'276123'},
-    {label:'시행령', date:'2026-10-01', id:'290845'},
-    {label:'시행규칙', date:'2026-03-20', id:'284609'}
-  ]
-};
+import {TRANSFER_HISTORY_RANGE,transferLawHistory,transferProvisions} from '../data/transfer-law-history.mjs';
+const transferVersions = transferLawHistory.flatMap(group=>group.versions);
 
 export const LAW_REVIEW = {
   income:{lawId:'001565',lawName:'소득세법',articles:'제27조·제55조 및 부칙',dateLabel:'소득 귀속 기준일',
@@ -28,4 +21,24 @@ export function isCalendarDate(value) {
 }
 export function supportedReviewDate(tax,date) {
   return isCalendarDate(date) && Number(date.slice(0,4)) === TAX_SCOPES[tax].year;
+}
+
+export function transferLawAt(tax,date) {
+  if (tax!=='inheritance' && tax!=='gift') return null;
+  const range = TRANSFER_HISTORY_RANGE;
+  const verified = isCalendarDate(date) && date >= range.from && date <= range.through;
+  if (!verified) return {range,versions:[],provisions:[]};
+  const versions = transferLawHistory.map(({label,versions})=>({label,...versions.find(version=>version.date<=date)}));
+  const provisions = transferProvisions.flatMap(provision=>{
+    if (provision.tax && provision.tax!==tax) return [];
+    const version = transferVersions.find(item=>item.id===provision.id);
+    if (provision.eventDate && date<version.date) return [];
+    return [{...provision,version}];
+  });
+  return {range,versions,provisions};
+}
+
+export function transferLawUrl({id,date},amendment=false) {
+  const url = 'https://law.go.kr/LSW/lsInfoP.do?lsiSeq='+id+'&efYd='+date.replaceAll('-','');
+  return amendment?url+'&viewCls=lsRvsDocInfoR':url;
 }

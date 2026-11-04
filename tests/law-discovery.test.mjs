@@ -4,7 +4,44 @@ import {EventEmitter} from 'node:events';
 import {Readable} from 'node:stream';
 import {changedLaws,discoverTaxLaw,parseLawList,resolveVersions} from '../lib/law-discovery.mjs';
 import {createLawFetch} from '../lib/law-network.mjs';
-import {supportedReviewDate} from '../public/lib/law-review.mjs';
+import {supportedReviewDate,transferLawAt,transferLawUrl} from '../public/lib/law-review.mjs';
+
+test('상증세 시행일 경계마다 해당 날짜의 법률·시행령·시행규칙을 찾는다',()=>{
+ const dates=[
+  ['2026-01-01','280353','277615','272739'],
+  ['2026-01-02','276123','280859','282647'],
+  ['2026-02-26','276123','280859','282647'],
+  ['2026-02-27','276123','283637','282647'],
+  ['2026-03-19','276123','283637','282647'],
+  ['2026-03-20','276123','283637','284609'],
+  ['2026-09-17','276123','283637','284609'],
+  ['2026-09-18','276123','288887','284609'],
+  ['2026-09-30','276123','288887','284609'],
+  ['2026-10-01','276123','290845','284609'],
+  ['2026-11-04','276123','290845','284609']
+ ];
+ for(const [date,...expected] of dates)for(const tax of ['inheritance','gift']){
+  assert.deepEqual(transferLawAt(tax,date).versions.map(version=>version.id),expected,date);
+ }
+ for(const date of ['','2025-12-31','2026-02-30','2026-11-05']){
+  assert.deepEqual(transferLawAt('gift',date).versions,[]);
+ }
+ assert.equal(transferLawAt('vat','2026-10-01'),null);
+});
+
+test('상속개시일 적용례와 별도 신고일을 보는 증여세 부칙을 구분한다',()=>{
+ const before=transferLawAt('inheritance','2026-02-26');
+ const after=transferLawAt('inheritance','2026-02-27');
+ assert.ok(!before.provisions.some(note=>note.id==='283637'&&note.eventDate));
+ assert.ok(after.provisions.some(note=>note.id==='283637'&&note.eventDate));
+ assert.ok(!after.provisions.some(note=>note.id==='290845'));
+ const gift=transferLawAt('gift','2026-09-30');
+ assert.equal(gift.versions[1].id,'288887');
+ const filing=gift.provisions.find(note=>note.id==='290845');
+ assert.equal(filing.timing,'증여세 과세표준 신고일');
+ assert.equal(transferLawUrl(filing.version,true),
+  'https://law.go.kr/LSW/lsInfoP.do?lsiSeq=290845&efYd=20261001&viewCls=lsRvsDocInfoR');
+});
 
 test('시행일에 맞는 법령과 시행예정본을 분리하고 동시 시행본을 모두 보여준다',()=>{
  const records=[

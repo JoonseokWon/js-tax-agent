@@ -27,6 +27,7 @@ finally { Remove-Item Env:LAW_OPEN_DATA_OC -ErrorAction SilentlyContinue }
 - 운영체제 DNS 조회가 실패하면 수집기에서만 Cloudflare DNS-over-HTTPS로 `www.law.go.kr` 주소를 확인합니다. DNS 조회에는 호스트명만 보내고, OC는 인증서 검증을 거친 법제처 공식 HTTPS API로 보냅니다. [DNS-over-HTTPS 명세](https://developers.cloudflare.com/1.1.1.1/encryption/dns-over-https/make-api-requests/)
 - 법제처 응답에서 사용자 검증 거부가 나오면 신청의 승인 상태, OC, 등록한 서버 IP와 도메인을 확인하세요. Windows DNS 확인 명령은 `Resolve-DnsName www.law.go.kr`입니다.
 - 변경 표시가 나오면 공식 원문의 해당 조문, 신구 비교, 부칙의 적용례·경과조치를 확인합니다. 적용 시점이 기존 계산 범위와 다르면 새 규칙에 대해 경계값 테스트를 추가한 뒤 배포합니다.
+- 비교 화면의 상속세·증여세 날짜 조회는 2026-01-01~2026-11-04에 대한 검증된 연혁을 사용합니다. 수집 결과의 기준일·실행일 자료만으로는 중간 개정을 확인할 수 없으므로 공식 연혁에서 모든 중간 시행본을 대조하고, 검증한 버전과 주요 부칙을 웹 자료에 반영합니다. 부칙이 신고일·평가일 등 다른 날짜를 기준으로 정한 경우 그 기준일을 별도로 표시합니다.
 - 수집 문서의 제목·일자·공식 링크는 검토 후보입니다. 국세청 해석의 본문 API는 [공식 제공 목록](https://open.law.go.kr/LSO/openApi/guideList.do)에 없으므로 해석 문서번호로 [국세법령정보시스템](https://taxlaw.nts.go.kr/)에서 원문을 확인합니다. 회신·판결 원문에서 사실관계, 판단, 판결 결과 및 당시 법령을 확인하고, 검토한 요약만 검색 자료에 추가합니다.
 
 [시행일 목록 명세](https://open.law.go.kr/LSO/openApi/guideResult.do?htmlName=lsEfYdListGuide) · [국세청 해석 목록 명세](https://open.law.go.kr/LSO/openApi/guideResult.do?htmlName=cgmExpcNtsListGuide) · [판례 목록 명세](https://open.law.go.kr/LSO/openApi/guideResult.do?htmlName=precListGuide)

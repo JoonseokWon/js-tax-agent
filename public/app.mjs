@@ -1,6 +1,6 @@
 import {answerQuestion,validateQuestion} from './lib/rag.mjs';
 import {compareTax,BRACKETS,CORPORATE_BRACKETS,TRANSFER_BRACKETS,TAX_SCOPES,VAT_RATE,parseAmount} from './lib/tax.mjs';
-import {LAW_REVIEW,TRANSFER_LAW_BASELINE,supportedReviewDate} from './lib/law-review.mjs';
+import {LAW_REVIEW,supportedReviewDate,transferLawAt,transferLawUrl} from './lib/law-review.mjs';
 import {corpus,corpusStats} from './data/corpus.mjs';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -123,28 +123,44 @@ function setCompareTax(tax){
  const rates=config.brackets?`<div class="table-wrap"><table><caption class="sr-only">${esc(TAX_SCOPES[tax].name)} 기본세율</caption><thead><tr><th scope="col">과세표준 상한</th><th scope="col">세율</th><th scope="col">누진공제</th></tr></thead><tbody>${config.brackets.map(b=>`<tr><td>${b.limit===Infinity?config.highest:money(b.limit)+' 이하'}</td><td>${b.rate}%</td><td>${money(b.deduction)}</td></tr>`).join('')}</tbody></table></div>`:'';
  $('#compare-rules-body').innerHTML=`<p>${esc(config.notes)}</p><p>${esc(config.formula)}</p>${rates}<a href="${esc(source.url)}" target="_blank" rel="noopener noreferrer">국세청 계산 근거 보기 ↗</a>`;
  document.querySelectorAll('.scenario input').forEach(renderAmount);
+ if(tax==='inheritance'||tax==='gift')$('#law-review').open=true;
  renderLawReview(tax);
  resetComparison(saved?'이전에 입력한 값을 불러왔어요. 세액 비교하기를 눌러 확인하세요.':'예시값이에요. 본인 조건에 맞게 수정한 뒤 비교해 주세요.');
 }
 function renderLawReview(tax){
  const review=LAW_REVIEW[tax],input=$('#review-date'),date=reviewDates[tax]??'';
+ const history=transferLawAt(tax,date);
  input.value=date;
  $('#review-date-label').textContent=review.dateLabel+' (선택)';
+ $('#review-date-help').textContent=history?
+  '날짜를 입력하면 그날 시행 중이던 법률·시행령·시행규칙과 함께 볼 부칙을 보여줘요.':
+  '공포일과 시행일은 다를 수 있어요. 원문의 연혁에서 기준일의 법령을 고르고 부칙의 적용례·경과조치를 확인하세요.';
  const law=$('#review-law-link');
- law.href='https://www.law.go.kr/LSW/lsInfoP.do?lsId='+review.lawId;
+ law.href='https://law.go.kr/LSW/lsInfoP.do?lsId='+review.lawId;
  law.textContent=review.lawName+' '+review.articles+' · 원문과 연혁 열기 ↗';
  const versions=$('#review-versions');
- versions.hidden=tax!=='inheritance'&&tax!=='gift';
- if(!versions.hidden){
-  const {checkedOn,versions:entries}=TRANSFER_LAW_BASELINE;
-  versions.innerHTML=`<p><strong>법제처 수집일 ${checkedOn} 기준 시행본</strong></p><ul>${entries.map(({label,date,id})=>`<li><a href="https://www.law.go.kr/LSW/lsInfoP.do?lsiSeq=${id}" target="_blank" rel="noopener noreferrer">${label} · ${date} 시행 ↗</a></li>`).join('')}</ul>`;
- }
+ versions.hidden=!history?.versions.length;
+ if(!versions.hidden)renderTransferLaw(versions,history);
  $('#review-evidence').textContent=review.evidence;
  const valid=!date||supportedReviewDate(tax,date);
  if(valid)input.removeAttribute('aria-invalid');else input.setAttribute('aria-invalid','true');
- $('#review-date-status').textContent=!date?'기준일을 넣으면 계산 지원 연도와 맞는지 확인해요.':
+ $('#review-date-status').textContent=history?
+  !date?`${history.range.from}부터 ${history.range.through}까지 확인한 법령이 있어요. 날짜를 입력해 보세요.`:
+  versions.hidden?`이 날짜의 시행본은 아직 확인하지 않았어요. 원문과 연혁을 확인해 주세요. 확인 범위는 ${history.range.from}~${history.range.through}예요.`:
+  `${date}에 시행 중이던 법령 3개와 함께 볼 부칙을 찾았어요.`:
+  !date?'기준일을 넣으면 계산 지원 연도와 맞는지 확인해요.':
   valid?'계산 지원 연도에 해당해요. 기준일의 조문과 부칙에서 실제 적용 여부를 확인하세요.':
   TAX_SCOPES[tax].period+'만 계산할 수 있어요. 다른 시점은 공식 원문과 연혁을 확인하세요.';
+}
+function renderTransferLaw(container,{range,versions,provisions}){
+ const link=(url,label)=>`<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(label)} ↗</a>`;
+ const rows=versions.map(version=>`<li><strong>${esc(version.label)}</strong> · ${esc(version.date)} 시행 · ${esc(version.number)}
+  <div class="law-version-links">${link(transferLawUrl(version),version.label+' 본문')}${link(transferLawUrl(version,true),version.label+' 개정문·부칙')}</div></li>`);
+ const notes=provisions.map(({timing,summary,version,articles})=>`<li><strong>${esc(timing)} 기준</strong><p>${esc(summary)}</p>
+  ${link(transferLawUrl(version,true),version.number+' 부칙 '+articles)}</li>`);
+ container.innerHTML=`<h3>선택한 날짜의 시행본</h3><ul class="law-version-list">${rows.join('')}</ul>
+  <h3>함께 확인할 부칙</h3><p>조항에 따라 신고일이나 평가일을 따로 확인해야 해요.</p>
+  <ul class="law-version-list">${notes.join('')}</ul><p class="law-checked">공식 연혁 확인일 ${esc(range.through)}</p>`;
 }
 $('#review-date').addEventListener('change',e=>{
  const tax=$('#compare-tax').value;reviewDates[tax]=e.target.value;

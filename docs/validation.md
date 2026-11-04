@@ -1,5 +1,10 @@
 # 검증 기록
 
+## 상속개시일·증여일에 따른 시행본과 부칙 (2026-11-04)
+
+- 법제처 수집의 연초·현재 결과에 국가법령정보센터 연혁을 대조해 법률·시행령·시행규칙의 2026년 11월 4일까지 시행본을 확인했다. 1월 1일에 시행 중이던 2025년 시행령·시행규칙과 2월 27일·9월 18일 시행령도 포함했다. [법률 개정문](https://law.go.kr/LSW/lsRvsDocListP.do?chrClsCd=010202&lsId=001561&lsRvsGubun=all) · [시행령 개정문](https://law.go.kr/LSW/lsRvsDocListP.do?chrClsCd=010202&lsId=003814&lsRvsGubun=all) · [시행규칙 개정문](https://law.go.kr/LSW/lsRvsDocListP.do?chrClsCd=010202&lsId=007388&lsRvsGubun=all)
+- 데스크톱에서 상속개시일 2월 26일·27일의 시행령과 부칙 전환을 확인했다. 모바일에서 증여일 9월 30일·10월 1일의 시행령과 별도 신고일 기준 부칙, 확인 범위 밖 안내, 세목별 날짜 유지와 가로 스크롤 없음을 확인했다. 자동 검사 45개가 통과했다.
+
 ## 상속세·증여세 법제처 실수집과 원문 검증 (2026-11-04)
 
 - 승인된 OC로 검색어별 최대 첫 페이지를 수집했다. 상속세는 회신 193건·판례 196건, 증여세는 회신 200건·판례 119건이다. 세목 간 중복까지 제거하면 회신 352건·판례 301건이다. 결과는 Git 제외 대상인 `outputs/law-discovery-inheritance.json`과 `outputs/law-discovery-gift.json`에 저장했다.
