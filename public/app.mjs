@@ -1,12 +1,15 @@
 import {answerQuestion,validateQuestion} from './lib/rag.mjs';
 import {compareTax,BRACKETS,CORPORATE_BRACKETS,TRANSFER_BRACKETS,TAX_SCOPES,VAT_RATE,parseAmount} from './lib/tax.mjs';
 import {LAW_REVIEW,supportedReviewDate,transferLawAt,transferLawUrl} from './lib/law-review.mjs';
+import {calculationImpact,sourceImpact} from './lib/law-impact.mjs';
 import {corpus,corpusStats} from './data/corpus.mjs';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const numberFormat=new Intl.NumberFormat('ko-KR');
 const money=n=>numberFormat.format(n)+'원';
 let busy=false,checking=false,requestNumber=0,aiAvailable=false;
+let lawReviews={},lawReviewRequest,lawReviewPoll,shownAnswer;
+const tracksAmendments=tax=>tax==='inheritance'||tax==='gift';
 document.querySelectorAll('[data-corpus-count]').forEach(el=>el.textContent=corpusStats.total);
 function focusHeading(el){el.setAttribute('tabindex','-1');el.focus({preventScroll:true});(el.closest('#answer,#comparison-result')||el).scrollIntoView({behavior:'instant',block:'start'});}
 function route(){
@@ -20,28 +23,78 @@ window.addEventListener('hashchange',route);
 function errorAt(el,message){el.textContent=message||'';el.hidden=!message;}
 function setBusy(value){busy=value;$('#question-form').setAttribute('aria-busy',String(value));$('#ask-submit').disabled=value;$('#ask-ai').disabled=value||checking;$('#ask-submit').textContent=value?'공식 근거를 살펴보고 있어요…':'근거로 답변 보기 ↗';}
 function sourceDetails(d){return `<details class="source-details"><summary>${d.referenceOnly?'사실관계·판단·적용 한계 보기':'근거와 확인할 사실 보기'}</summary>${d.number?`<p class="document-number">${esc(d.number)}${d.outcome?' · '+esc(d.outcome):''}</p>`:''}${d.facts?`<p><strong>사실관계</strong><br>${esc(d.facts)}</p>`:''}<p>${esc(d.detail)}</p>${d.limitations?`<p class="source-limit"><strong>적용 한계</strong><br>${esc(d.limitations)}</p>`:''}<p><strong>확인할 사실</strong> · ${esc(d.check)}</p><p>${esc(d.publisher)} · ${esc(d.period)}<br>자료 확인일 ${esc(d.verifiedAt)}</p>${d.sourceLocation?`<p>원문 확인 위치: ${esc(d.sourceLocation)}</p>`:''}<a href="${esc(d.url)}" target="_blank" rel="noopener noreferrer">공식 원문 열기 ↗</a></details>`;}
-function renderAnswer(result){
+function refreshLawImpact(){
+ if(!lawReviewRequest)lawReviewRequest=fetch('./api/law-review',{signal:AbortSignal.timeout(3000)})
+  .then(async response=>{
+   if(!response.ok)return;
+   lawReviews=await response.json();
+   if(lawReviews.collecting&&!lawReviewPoll){
+    lawReviewPoll=setTimeout(async()=>{
+     lawReviewPoll=null;
+     await refreshLawImpact();
+     renderComparisonReview();
+     if(!lawReviews.collecting&&shownAnswer&&tracksAmendments(shownAnswer.tax)&&!$('#answer').hidden)renderAnswer(shownAnswer,false);
+    },5000);
+   }
+  })
+  .catch(()=>{})
+  .finally(()=>{lawReviewRequest=null;});
+ return lawReviewRequest;
+}
+function amendmentLinks(amendments,checkedOn){
+ return amendments.map(amendment=>{
+  const clauses=amendment.articles?.map(article=>{
+   const [number,branch]=article.split('-');
+   return '제'+number+'조'+(branch?'의'+branch:'');
+  }).join('·');
+  const text=[amendment.label,clauses,amendment.date+(amendment.date>checkedOn?' 시행 예정':' 시행')].filter(Boolean).join(' · ');
+  return `<li><a href="${esc(transferLawUrl(amendment,true))}" target="_blank" rel="noopener noreferrer">${esc(text)} ↗</a></li>`;
+ }).join('');
+}
+function reviewNotes(tax){
+ if(!tracksAmendments(tax))return '';
+ const review=lawReviews[tax];
+ const activity=lawReviews.collecting?'<p class="review-meta">법제처에서 새 개정을 확인하고 있어요.</p>':
+  lawReviews.collectionFailed?'<p class="review-meta">자동 수집이 멈췄어요. 마지막 확인 결과를 표시해요.</p>':'';
+ if(!review)return activity||'<p class="review-meta">저장된 개정 확인 결과가 없어요.</p>';
+ const incomplete=review.amendments.filter(amendment=>amendment.articles===null);
+ const addenda=review.amendments.filter(amendment=>amendment.addendaChanged);
+ return `${activity}<p class="review-meta">개정 자료 확인일 ${esc(review.checkedOn)}${review.complete?'':' · 일부 법령의 연혁을 확인하지 못했어요.'}${review.bodyAvailable===false&&!incomplete.length?' · 법령 본문 조회를 확인하지 못했어요.':''}</p>
+ ${incomplete.length?`<div class="review-notice"><p>새 시행본의 조문 비교가 끝나지 않았어요.</p><ul>${amendmentLinks(incomplete,review.checkedOn)}</ul></div>`:''}
+ ${addenda.length?`<div class="review-notice"><p><strong>부칙 재검토 필요</strong> · 적용례와 경과조치를 확인해 주세요.</p><ul>${amendmentLinks(addenda.map(item=>({...item,articles:[]})),review.checkedOn)}</ul></div>`:''}`;
+}
+function sourceReview(tax,id){
+ const review=lawReviews[tax],amendments=sourceImpact(review,id);
+ return amendments.length?`<div class="review-notice"><strong>재검토 필요</strong><ul>${amendmentLinks(amendments,review.checkedOn)}</ul></div>`:'';
+}
+function renderAnswer(result,focus=true){
+ shownAnswer=result;
  const area=$('#answer');
  area.innerHTML=`<div class="eyebrow"><span class="dot"></span> ${result.mode==='ai'?'생성 AI · '+esc(result.model):'자료 요약 · 생성 AI 미사용'} · ${esc(result.taxName)} · ${esc(result.period)}</div><div class="answer-question">${esc(result.question)}</div><h2 id="answer-title">${esc(result.status==='insufficient'?'수록한 근거로는 확정하기 어려워요.':result.message)}</h2>`;
+ const impacted=result.sources.some(source=>sourceImpact(lawReviews[result.tax],source.id).length);
+ if(impacted)area.innerHTML+='<p class="review-notice"><strong>재검토 필요</strong> · 이 답변의 일부 근거 조문이 바뀌었어요. 아래에 표시한 원문과 적용 시점을 확인해 주세요.</p>';
+ area.innerHTML+=reviewNotes(result.tax);
  if(result.generated)area.innerHTML+=`<div class="generated-answer">${esc(result.generated)}</div>`;
  if(result.points?.length)area.innerHTML+=`<ul class="ai-points">${result.points.map(p=>`<li>${esc(p.text)} <span class="citations">${p.sourceIds.map(id=>{const n=result.sources.findIndex(d=>d.id===id),d=result.sources[n];return `<a href="${esc(d.url)}" target="_blank" rel="noopener noreferrer" aria-label="근거 ${n+1}: ${esc(d.title)}">[${n+1}]</a>`;}).join(' ')}</span></li>`).join('')}</ul>`;
  if(result.missingFacts?.length)area.innerHTML+=`<div class="missing-facts"><h3>더 확인하면 좋은 사실</h3><ul>${result.missingFacts.map(s=>`<li>${esc(s)}</li>`).join('')}</ul></div>`;
  if(!result.sources.length&&!result.generated)area.innerHTML+=`<p>${esc(result.next)}</p>`;
- for(const[s,d]of result.sources.entries())area.innerHTML+=`<section class="answer-section"><div class="eyebrow">${esc(d.kind)}${d.referenceOnly?' · 역사적 참고 사례':''}</div><h3><span class="source-number">${s+1}</span>${esc(d.title)}</h3>${d.number?`<p class="document-number">${esc(d.number)} · ${esc(d.issuedAt)}${d.outcome?' · '+esc(d.outcome):''}</p>`:''}<p>${esc(d.summary)}</p>${sourceDetails(d)}</section>`;
+ for(const[s,d]of result.sources.entries())area.innerHTML+=`<section class="answer-section"><div class="eyebrow">${esc(d.kind)}${d.referenceOnly?' · 역사적 참고 사례':''}</div><h3><span class="source-number">${s+1}</span>${esc(d.title)}</h3>${sourceReview(result.tax,d.id)}${d.number?`<p class="document-number">${esc(d.number)} · ${esc(d.issuedAt)}${d.outcome?' · '+esc(d.outcome):''}</p>`:''}<p>${esc(d.summary)}</p>${sourceDetails(d)}</section>`;
  if(result.sources.length||result.limitations)area.innerHTML+=`<div class="answer-caution">${esc(result.limitations||result.next)}</div>`;
  area.innerHTML+=`<div class="answer-actions"><a class="button primary" href="#compare">가정을 바꿔 세액 비교하기 →</a><button class="button secondary" id="download-answer">검토 메모 다운로드</button></div>`;
- $('#download-answer').addEventListener('click',()=>downloadMemo({answer:result}));area.querySelector('a[href="#compare"]').addEventListener('click',()=>setCompareTax(result.tax));area.hidden=false;focusHeading($('#answer-title'));
+ $('#download-answer').addEventListener('click',()=>downloadMemo({answer:result}));area.querySelector('a[href="#compare"]').addEventListener('click',()=>setCompareTax(result.tax));area.hidden=false;if(focus)focusHeading($('#answer-title'));
 }
 async function ask(mode='local'){
  if(busy)return;errorAt($('#question-error'),'');$('#question').removeAttribute('aria-invalid');
  let question;try{question=validateQuestion($('#question').value);}catch(e){errorAt($('#question-error'),e.message);$('#question').setAttribute('aria-invalid','true');$('#question').focus();return;}
  const tax=$('#ask-tax').value,seq=++requestNumber;setBusy(true);$('#answer').hidden=true;
+ const reviewRequest=tracksAmendments(tax)?refreshLawImpact():null;
  try{
   let result;
   if(mode==='ai'){
    const response=await fetch('./api/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question,tax,mode:'ai'}),signal:AbortSignal.timeout(55000)});
    const payload=await response.json();if(!response.ok)throw new Error(payload.error||'답변을 받지 못했어요. 다시 시도해 주세요.');result=payload;
   }else{await new Promise(resolve=>setTimeout(resolve,150));result=answerQuestion(question,{tax});}
+  if(reviewRequest)await reviewRequest;
   if(seq===requestNumber){renderAnswer(result);if(result.mode==='ai')refreshRuntime();}
  }catch(e){if(seq===requestNumber)errorAt($('#question-error'),e.name==='TimeoutError'?'응답이 늦어지고 있어요. 다시 시도하거나 근거로 답변 보기를 이용해 주세요.':e.message);}
  finally{if(seq===requestNumber)setBusy(false);}
@@ -103,6 +156,15 @@ const reviewDates={};
 function resetComparison(message){
  $('#comparison-result').hidden=true;$('#compare-state').textContent=message;errorAt($('#compare-error'),'');
 }
+function renderComparisonReview(){
+ const tax=$('#compare-tax').value, review=lawReviews[tax];
+ const rules=calculationImpact(review,tax);
+ const notice=rules.length?`<div class="review-notice"><strong>재검토 필요</strong><p>아래 규칙의 근거 조문이 바뀌었어요. 비교 결과는 앱에 수록된 계산식으로 산출해요.</p>
+  <ul>${rules.map(rule=>`<li>${esc(rule.label)}<ul>${amendmentLinks(rule.amendments,review.checkedOn)}</ul></li>`).join('')}</ul></div>`:'';
+ $('#compare-law-impact').innerHTML=notice+reviewNotes(tax);
+ const result=$('#result-law-impact');
+ if(result)result.innerHTML=notice;
+}
 function renderAmount(input){
  const help=$('#'+input.id+'-help');
  try{help.textContent=money(parseAmount(input.value));}catch{help.textContent='원 단위 정수로 입력해 주세요.';}
@@ -126,6 +188,8 @@ function setCompareTax(tax){
  if(tax==='inheritance'||tax==='gift')$('#law-review').open=true;
  renderLawReview(tax);
  resetComparison(saved?'이전에 입력한 값을 불러왔어요. 세액 비교하기를 눌러 확인하세요.':'예시값이에요. 본인 조건에 맞게 수정한 뒤 비교해 주세요.');
+ renderComparisonReview();
+ if(tracksAmendments(tax))refreshLawImpact().then(renderComparisonReview);
 }
 function renderLawReview(tax){
  const review=LAW_REVIEW[tax],input=$('#review-date'),date=reviewDates[tax]??'';
@@ -221,6 +285,11 @@ function renderComparison(tax,{baseline:a,alternative:b,difference}){
  area.innerHTML=`<div class="result-summary"><div class="eyebrow">${esc(scope.name)} · 비교안 B − 기준안 A</div><h2 id="result-title">${title}</h2><p>${change}입력한 가정으로 비교한 금액이에요. 실제 신고 금액은 별도로 확인해 주세요.</p></div><div class="result-panel"><h3>두 안을 나란히 비교해요</h3>${bars}<div class="table-wrap"><table><caption class="sr-only">기준안과 비교안의 계산 내역</caption><thead><tr><th scope="col">계산 항목</th><th scope="col">기준안 A</th><th scope="col">비교안 B</th></tr></thead><tbody>${rows}</tbody></table></div><p class="table-foot">${esc(config.formula)}</p><div class="answer-actions"><button id="download-comparison" class="button secondary">검토 메모 다운로드</button><a id="comparison-sources" href="#sources" class="button secondary">계산 근거 살펴보기</a></div></div>`;
  $('#download-comparison').addEventListener('click',()=>downloadMemo({tax,comparison:{baseline:a,alternative:b,difference},date:reviewDates[tax]}));
  $('#comparison-sources').addEventListener('click',()=>filterTaxSources(tax,'guidance'));
+ const notice=document.createElement('div');
+ notice.id='result-law-impact';
+ area.querySelector('.result-summary').append(notice);
+ renderComparisonReview();
+ if(tracksAmendments(tax))refreshLawImpact().then(renderComparisonReview);
  area.hidden=false;focusHeading($('#result-title'));
 }
 function renderSources(){

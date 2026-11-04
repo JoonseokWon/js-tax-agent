@@ -30,6 +30,11 @@
 .law-version-list li+li{border-top:1px solid var(--line)}
 .law-version-links{display:flex;gap:4px 14px;flex-wrap:wrap;margin-top:4px}
 #review-versions .law-checked{font-size:12px}
+.review-notice{margin:10px 0;padding:10px 12px;border-left:3px solid #b65a19;background:#fff7ed;color:#744322;border-radius:6px}
+.review-notice p{color:inherit}
+.review-notice ul{margin:4px 0;padding-inline-start:20px}
+.review-notice a{color:#185ac6;text-decoration:underline;text-underline-offset:3px}
+.review-meta{margin:6px 0;font-size:12px}
 .bar-row progress{width:100%;height:20px;border:0;border-radius:6px;overflow:hidden;background:#f0f3f9;accent-color:#2670eb}
 .bar-row progress::-webkit-progress-bar{background:#f0f3f9}
 .bar-row progress::-webkit-progress-value{background:#2670eb;border-radius:6px}

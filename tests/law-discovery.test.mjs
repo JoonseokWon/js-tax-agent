@@ -5,6 +5,39 @@ import {Readable} from 'node:stream';
 import {changedLaws,discoverTaxLaw,parseLawList,resolveVersions} from '../lib/law-discovery.mjs';
 import {createLawFetch} from '../lib/law-network.mjs';
 import {supportedReviewDate,transferLawAt,transferLawUrl} from '../public/lib/law-review.mjs';
+import {compareTransferBodies,transferReviewStatus} from '../lib/transfer-law-impact.mjs';
+import {calculationImpact,sourceImpact} from '../public/lib/law-impact.mjs';
+
+test('상증세 새 시행본은 재수집해도 검토 기준에 남고 변경된 조문만 답변과 계산에 연결한다',async()=>{
+ const name='상속세 및 증여세법';
+ const updated={id:'999999',title:name,date:'2026-12-01'};
+ const laws=[{name,live:[{id:'276123',date:'2026-01-02'}],upcoming:[updated]}];
+ const body=version=>({법령:{
+  기본정보:{법령명_한글:version.name,시행일자:version.date.replaceAll('-','')},
+  조문:{조문단위:[
+   {조문여부:'전문',조문번호:'25',조문내용:'과세표준과 세율'},
+   {조문여부:'조문',조문번호:'25',조문내용:'상속세 과세표준',조문변경여부:'Y'},
+   {조문여부:'조문',조문번호:'26',조문제목:'상속세 세율',항:{항내용:version.id===updated.id?'세율 B':'세율 A'}},
+   {조문여부:'조문',조문번호:'53',조문가지번호:'02',조문내용:'혼인·출산 증여재산 공제'}
+  ]},
+  부칙:{부칙단위:{부칙내용:version.id===updated.id?'시행일 이후 적용':'종전 규정'}}
+ }});
+ const articleChanges=await compareTransferBodies(laws,body);
+ assert.deepEqual(articleChanges[0].articles,['26']);
+ const first=transferReviewStatus({checkedOn:'2026-11-04',laws,articleChanges});
+ assert.deepEqual(calculationImpact(first,'inheritance').map(rule=>rule.label),['상속세 기본세율·누진공제']);
+ assert.deepEqual(calculationImpact(first,'gift').map(rule=>rule.label),['증여세 기본세율·누진공제']);
+ assert.equal(sourceImpact(first,'inheritance-base').length,0);
+ assert.equal(sourceImpact(first,'inheritance-flow').length,1);
+ assert.equal(sourceImpact(first,'gift-deduction').length,0);
+ assert.equal(first.amendments[0].addendaChanged,true);
+ const after=transferReviewStatus({checkedOn:'2026-12-02',laws:[{name,live:[updated]}],articleChanges});
+ assert.deepEqual(after.amendments,first.amendments);
+ const failed=await compareTransferBodies(laws,()=>({error:'본문 미수신'}));
+ const incomplete=transferReviewStatus({checkedOn:'2026-11-04',laws,articleChanges:failed});
+ assert.equal(incomplete.amendments[0].articles,null);
+ assert.deepEqual(calculationImpact(incomplete,'gift'),[]);
+});
 
 test('상증세 시행일 경계마다 해당 날짜의 법률·시행령·시행규칙을 찾는다',()=>{
  const dates=[

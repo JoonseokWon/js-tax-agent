@@ -25,6 +25,10 @@ try {
     await writeFile(temp,JSON.stringify(report,null,2)+'\n',{flag:'wx'});
     await rename(temp,file);
     console.log(tax+' · '+report.laws.length+'개 법령 연혁 · 해석 '+report.candidates.ntsCgmExpc.records.length+'건 · 판례 '+report.candidates.prec.records.length+'건');
+    if(report.articleBodyAvailable!==undefined){
+      console.log(report.articleBodyAvailable?'법령 본문 조회 확인 · 신규 시행본 '+report.articleChanges.length+'건':
+        '법령 본문 비교 미완료 · 본문 조회 권한과 응답을 확인해 주세요.');
+    }
     const changes = previous?(report.changedLaws.join(', ')||'이전 기록과 버전 동일'):'첫 실행 · 변경 비교 기준 저장';
     console.log('검토 후보: outputs/law-discovery-'+tax+'.json · '+changes);
   }
