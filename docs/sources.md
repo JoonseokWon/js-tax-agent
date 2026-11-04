@@ -1,5 +1,17 @@
 # 수록 자료와 근거 관리
 
+## v0.3 추가 원문 (2026-11-04 확인)
+
+| 세목 | 공식 원문 | 확인한 범위 |
+| --- | --- | --- |
+| 법인세 | [국세청 세율표](https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=7746&mi=2372), [법인세법 제55조](https://www.law.go.kr/lsLinkCommonInfo.do?lsJoLnkSeq=1031191265), [개정문 및 부칙](https://law.go.kr/LSW/lsRvsDocListP.do?chrClsCd=010102&lsId=001563) | 2026년 개시 일반 영리법인 세율과 별도세율·단기 사업연도 규정 |
+| 법인세 | [법인세법 제13·14조](https://www.law.go.kr/lsLinkCommonInfo.do?lsJoLnkSeq=1031128481) | 소득금액과 과세표준의 구분 |
+| 법인세 | [서면-2020-법인-1478](https://taxlaw.nts.go.kr/qt/USEQTA002P.do?ntstDcmId=010000000000445244), [대법원 2007두12422](https://law.go.kr/LSW/precInfoP.do?precSeq=140871) | 위탁 판매 실비·성과보상 및 판매촉진 비용의 판단과 당시 규정 |
+| 부가가치세 | [국세청 부가가치세 안내](https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?cntntsId=7693&mi=2401), [제38조](https://www.law.go.kr/lsLinkCommonInfo.do?lsJoLnkSeq=1031739239), [제39조](https://law.go.kr/LSW/lsLinkCommonInfo.do?chrClsCd=010202&lsJoLnkSeq=1019905099) | 일반과세 계산과 공제·불공제의 구분 |
+| 부가가치세 | [서면-2019-부가-4175](https://taxlaw.nts.go.kr/qt/USEQTA002P.do?ntstDcmId=010000000000515735), [대법원 2023두41314](https://www.law.go.kr/precInfoP.do?precSeq=606533) | 지연수취와 공급시기의 구분, 실제 공급자와 기재 명의의 불일치 |
+
+추가 회신과 판결은 원문 요지·회신·사실관계 또는 판결요지·주문·이유에서 검증했다. 회신 생산일 및 판결 선고일은 적용 법령 시행일과 분리했다. 법제처 목록을 통한 확장과 개정 추적 절차는 [세법 근거 수집](law-discovery.md)에 기록한다.
+
 ## v0.2 추가 원문 (2026-10-29 확인)
 
 |ID|공식 원문|회신/선고일|핵심 쟁점과 한계|
