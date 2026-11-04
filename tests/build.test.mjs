@@ -19,7 +19,11 @@ test('Sites 단일 Worker 번들은 자산·동적 API·로그인 검사 계약�
  const worker=(await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'))).default;
  const env={OPENAI_API_KEY:'test-credential-not-in-bundle'};
  const home=await worker.fetch(new Request('https://tax.example/'),env);assert.equal(home.status,200);assert.match(await home.text(),/source-kind/);
- const runtime=await worker.fetch(new Request('https://tax.example/runtime.json'),env);const status=await runtime.text();assert.equal(JSON.parse(status).runtime,'hosted');assert.ok(!status.includes(env.OPENAI_API_KEY));
+ const runtime=await worker.fetch(new Request('https://tax.example/runtime.json'),env);const status=await runtime.text();assert.equal(JSON.parse(status).runtime,'hosted');assert.equal(JSON.parse(status).version,'0.4.0');assert.ok(!status.includes(env.OPENAI_API_KEY));
+ const review=await worker.fetch(new Request('https://tax.example/api/law-review'),env);
+ assert.equal(review.status,200);const snapshot=await review.json();
+ assert.deepEqual(snapshot,{inheritance:{checkedOn:'2026-11-04',complete:true,bodyAvailable:true,amendments:[]},
+  gift:{checkedOn:'2026-11-04',complete:true,bodyAvailable:true,amendments:[]},snapshot:true});
  const request=new Request('https://tax.example/api/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:'경비는?',mode:'ai'})});assert.equal((await worker.fetch(request,env)).status,401);
  assert.equal((await worker.fetch(new Request('https://tax.example/.env'),env)).status,404);assert.ok(!source.includes(env.OPENAI_API_KEY));
 });

@@ -7,6 +7,7 @@ import path from 'node:path';
 import {createApiHandler,SECURITY_HEADERS} from './lib/http-api.mjs';
 import {DEFAULT_MODEL} from './lib/generate.mjs';
 import {transferReviewStatus} from './lib/transfer-law-impact.mjs';
+import {publishedTransferReview} from './public/data/transfer-law-review.mjs';
 const root=path.resolve(fileURLToPath(new URL('./public/',import.meta.url)));
 const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml'};
 export function createApp({apiKey=process.env.OPENAI_API_KEY,model=process.env.OPENAI_MODEL||DEFAULT_MODEL,fetchImpl=fetch,autoCollect=false}={}){
@@ -47,7 +48,8 @@ export function createApp({apiKey=process.env.OPENAI_API_KEY,model=process.env.O
     const latest=reports.filter(Boolean).sort((a,b)=>
      b.review.checkedOn.localeCompare(a.review.checkedOn)||b.mtime-a.mtime)[0]?.review??null;
     await refreshTransferReview(latest);
-    return json(200,{inheritance:latest,gift:latest,collecting,collectionFailed});
+    const review=latest?{inheritance:latest,gift:latest}:publishedTransferReview;
+    return json(200,{...review,collecting,collectionFailed});
    }
    if(url.pathname==='/runtime.json'||url.pathname.startsWith('/api/')){
     const requestHeaders=new Headers();for(const[key,value]of Object.entries(req.headers))if(value)requestHeaders.set(key,Array.isArray(value)?value.join(','):value);

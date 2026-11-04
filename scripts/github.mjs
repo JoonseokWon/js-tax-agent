@@ -20,8 +20,9 @@ try{
   const data=await api('/user/repos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:repo,description:'공식 근거로 살펴보는 종합소득세 · 2025년 귀속 근거 검색과 세액 비교',private:false,auto_init:false,has_issues:true})});
   console.log(JSON.stringify({url:data.html_url,clone_url:data.clone_url,private:data.private}));
  }else if(action==='release'){
-  const[tag,bodyFile,...assets]=args;
-  const data=await api(`/repos/${user.login}/${repo}/releases`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tag_name:tag,name:'JS Tax Agent '+tag,body:await readFile(bodyFile,'utf8'),draft:false,prerelease:true})});
+  const stable=args[0]==='--stable';
+  const[tag,bodyFile,...assets]=stable?args.slice(1):args;
+  const data=await api(`/repos/${user.login}/${repo}/releases`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tag_name:tag,name:'JS Tax Agent '+tag,body:await readFile(bodyFile,'utf8'),draft:false,prerelease:!stable})});
   for(const asset of assets){const filename=asset.replaceAll('\\','/').split('/').at(-1);const r=await fetch(data.upload_url.split('{')[0]+'?name='+encodeURIComponent(filename),{method:'POST',headers:{...headers,'Content-Type':'application/octet-stream'},body:await readFile(asset)});if(!r.ok)throw new Error(`릴리스 자산 업로드 실패: ${r.status}`);const a=await r.json();console.log(JSON.stringify({asset:a.name,size:a.size,url:a.browser_download_url}));}
   console.log(JSON.stringify({url:data.html_url,tag:data.tag_name,prerelease:data.prerelease}));
  }else if(action==='notes'){

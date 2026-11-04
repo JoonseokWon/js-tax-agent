@@ -60,7 +60,7 @@ function reviewNotes(tax){
  if(!review)return activity||'<p class="review-meta">저장된 개정 확인 결과가 없어요.</p>';
  const incomplete=review.amendments.filter(amendment=>amendment.articles===null);
  const addenda=review.amendments.filter(amendment=>amendment.addendaChanged);
- return `${activity}<p class="review-meta">개정 자료 확인일 ${esc(review.checkedOn)}${review.complete?'':' · 일부 법령의 연혁을 확인하지 못했어요.'}${review.bodyAvailable===false&&!incomplete.length?' · 법령 본문 조회를 확인하지 못했어요.':''}</p>
+ return `${activity}<p class="review-meta">개정 자료 확인일 ${esc(review.checkedOn)}${lawReviews.snapshot?' · 릴리스에 포함된 확인 결과예요. 이후 변경은 공식 원문에서 확인해 주세요.':''}${review.complete?'':' · 일부 법령의 연혁을 확인하지 못했어요.'}${review.bodyAvailable===false&&!incomplete.length?' · 법령 본문 조회를 확인하지 못했어요.':''}</p>
  ${incomplete.length?`<div class="review-notice"><p>새 시행본의 조문 비교가 끝나지 않았어요.</p><ul>${amendmentLinks(incomplete,review.checkedOn)}</ul></div>`:''}
  ${addenda.length?`<div class="review-notice"><p><strong>부칙 재검토 필요</strong> · 적용례와 경과조치를 확인해 주세요.</p><ul>${amendmentLinks(addenda.map(item=>({...item,articles:[]})),review.checkedOn)}</ul></div>`:''}`;
 }
