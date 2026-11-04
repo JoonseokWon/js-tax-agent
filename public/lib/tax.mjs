@@ -1,5 +1,11 @@
 export const TAX_YEAR = 2025;
 export const MAX_AMOUNT = 1_000_000_000_000;
+export const VAT_RATE = 10;
+export const TAX_SCOPES = Object.freeze({
+  income:{name:'종합소득세',year:TAX_YEAR,period:'2025년 귀속'},
+  corporate:{name:'법인세',year:2026,period:'2026년 개시 · 1년 사업연도'},
+  vat:{name:'부가가치세',year:2026,period:'2026년 · 일반과세자'}
+});
 // 국세청: 2023~2025년 귀속. 모든 계산은 정수 원, 세율은 정수 %.
 export const BRACKETS = Object.freeze([
   { limit:14_000_000, rate:6, deduction:0 },
@@ -19,11 +25,19 @@ export function parseAmount(value, label='금액') {
   if (!Number.isSafeInteger(n) || n > MAX_AMOUNT) throw new Error(`${label}은 1조원 이하로 입력해 주세요.`);
   return n;
 }
-export function taxFromBase(value) {
-  const base = parseAmount(value, '과세표준');
-  const bracket = BRACKETS.find(b => base <= b.limit);
+export const CORPORATE_BRACKETS = Object.freeze([
+  { limit:200_000_000, rate:10, deduction:0 },
+  { limit:20_000_000_000, rate:20, deduction:20_000_000 },
+  { limit:300_000_000_000, rate:22, deduction:420_000_000 },
+  { limit:Infinity, rate:25, deduction:9_420_000_000 }
+]);
+function progressiveTax(base, brackets) {
+  const bracket = brackets.find(b => base <= b.limit);
   return {base, rate:base === 0 ? 0 : bracket.rate, deduction:bracket.deduction,
     tax:Math.max(0, Math.floor(base * bracket.rate / 100) - bracket.deduction)};
+}
+export function taxFromBase(value) {
+  return progressiveTax(parseAmount(value, '과세표준'), BRACKETS);
 }
 export function calculateScenario(input) {
   if (input.year !== TAX_YEAR) throw new Error('2025년 귀속만 지원해요. 다른 연도에는 적용하지 마세요.');
@@ -36,5 +50,23 @@ export function calculateScenario(input) {
 }
 export function compareScenarios(a,b) {
   const baseline=calculateScenario(a), alternative=calculateScenario(b);
+  return {baseline,alternative,difference:alternative.tax-baseline.tax};
+}
+export function calculateCorporate({year,base}) {
+  if (year !== TAX_SCOPES.corporate.year) throw new Error('2026년 개시 사업연도만 계산할 수 있어요.');
+  return {year,...progressiveTax(parseAmount(base, '과세표준'), CORPORATE_BRACKETS)};
+}
+export function calculateVat({year,sales,inputTax}) {
+  if (year !== TAX_SCOPES.vat.year) throw new Error('2026년 과세기간만 계산할 수 있어요.');
+  const supply = parseAmount(sales, '매출 공급가액');
+  const credit = parseAmount(inputTax, '공제 가능 매입세액');
+  const outputTax = Math.floor(supply * VAT_RATE / 100);
+  return {year,sales:supply,inputTax:credit,rate:VAT_RATE,outputTax,tax:outputTax-credit};
+}
+export function compareTax(tax,a,b) {
+  if (tax === 'income') return compareScenarios(a,b);
+  if (tax !== 'corporate' && tax !== 'vat') throw new Error('세목을 선택해 주세요.');
+  const calculate = tax === 'corporate' ? calculateCorporate : calculateVat;
+  const baseline=calculate(a), alternative=calculate(b);
   return {baseline,alternative,difference:alternative.tax-baseline.tax};
 }

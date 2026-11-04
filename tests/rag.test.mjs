@@ -9,7 +9,7 @@ test('범위 밖·특정 공제·다른 연도·미수록 사건번호·무관 �
  for(const q of ['부가가치세 신고 방법','부양가족 공제 가능한가요','2026년 종합소득세 세율','2024년 종합소득세 경비','2099두987654 판례','오늘 서울 날씨 어때요','연금저축 세액공제는?'])assert.equal(answerQuestion(q).status,'insufficient',q);
 });
 test('공식 출처·확인일·적용 시점이 있고 현재 법령은 2025 답변에서 제외',()=>{
- for(const d of corpus){assert.ok(['www.nts.go.kr','www.law.go.kr','law.go.kr','taxlaw.nts.go.kr'].includes(new URL(d.url).hostname));assert.equal(d.verifiedAt,'2026-10-29');assert.ok(d.period);}
+ for(const d of corpus){assert.ok(['www.nts.go.kr','www.law.go.kr','law.go.kr','taxlaw.nts.go.kr'].includes(new URL(d.url).hostname));assert.equal(d.verifiedAt,d.tax==='income'?'2026-10-29':'2026-11-04');assert.ok(d.period);}
  assert.ok(!retrieve('필요경비 제27조 법령').some(d=>d.id==='law27'));
 });
 test('공백·지나치게 긴 질문·식별정보 형식 거부',()=>{for(const q of ['',null,'가나','가'.repeat(2001),'주민번호 900101-1234567 세금','사업자 123-45-67890 경비'])assert.throws(()=>validateQuestion(q));});
@@ -27,9 +27,35 @@ test('대학원·증빙·차입금·초과인출금 사례 검색 평가',()=>{
  for(const[q,id]of [['강사 대학원 등록금 질의회신','nts-2015-0179'],['누락 수입 대응 필요경비 입증 판례','court-2001du4399'],['임대사업 대출이자 판례','court-2009du11874'],['초과인출금 가사관련경비 추정 판례','court-2022du32382']])assert.ok(retrieve(q).some(s=>s.id===id),q);
 });
 test('역사적 회신·판례는 계산 귀속연도와 구분하고 번호·사실·한계가 필수',()=>{
- const records=corpus.filter(d=>d.referenceOnly);assert.equal(records.length,6);
+ const records=corpus.filter(d=>d.referenceOnly);assert.equal(records.length,10);
  for(const d of records){assert.deepEqual(d.years,[]);assert.ok(d.number&&d.issuedAt&&d.facts&&d.limitations&&d.sourceLocation);}
  const caseDoc=records.find(d=>d.id==='court-2022du32382');assert.equal(caseDoc.outcome,'파기환송');
  const ruling=records.find(d=>d.id==='nts-2024-0703');assert.equal(ruling.issuedAt,'2025-07-18');assert.ok(ruling.facts.includes('2022'));
 });
 test('복사된 API 키 형식은 질문 전송 전 차단',()=>assert.throws(()=>validateQuestion('내 키 sk-proj-'+ 'x'.repeat(32)+'로 경비 질문')));
+test('세목별 검색과 적용 연도 구분, 지원 밖 질문 유보',()=>{
+ const corp=answerQuestion('2026년 법인세 세율과 과세표준');
+ assert.equal(corp.tax,'corporate');assert.equal(corp.year,2026);
+ assert.ok(corp.sources.some(d=>d.id==='corp-rates'));assert.ok(corp.sources.every(d=>d.tax==='corporate'));
+ const vat=answerQuestion('매입세액을 언제 공제할 수 있나요?',{tax:'vat'});
+ assert.equal(vat.tax,'vat');assert.ok(vat.sources.some(d=>d.id==='vat-credit'));
+ assert.ok(vat.sources.every(d=>d.tax==='vat'));
+ for(const q of ['법인세와 부가세 세율을 비교해 주세요','2025년 법인세 세율','2025.07.01에 시작한 법인세 사업연도 세율','간이과세 부가세 계산','부가세 매입세액 관련 판례']){
+  assert.equal(answerQuestion(q).status,'insufficient',q);
+ }
+ assert.match(answerQuestion('부가세 매출세액은?',{tax:'income'}).next,/같은 세목/);
+ assert.throws(()=>answerQuestion('매입세액 공제',{tax:['vat']}),/세목/);
+});
+test('법인세·부가세의 확인한 회신과 판결은 별도 역사적 근거로 검색',()=>{
+ for(const [tax,question,id] of [
+  ['corporate','판매촉진 비용의 손비 판례','corp-court-2007du12422'],
+  ['corporate','성과보상금 관련 국세청 회신','corp-nts-2020-1478'],
+  ['vat','세금계산서 실제 공급자 판례','vat-court-2023du41314'],
+  ['vat','서면-2019-부가-4175 판단은?','vat-nts-2019-4175']
+ ]){
+  const sources=retrieve(question,{tax});
+  assert.equal(sources[0]?.id,id);
+  assert.ok(sources.every(doc=>doc.referenceOnly&&doc.limitations&&doc.years.length===0));
+ }
+ assert.equal(answerQuestion('2026-01-15 종합소득세 세율').status,'insufficient');
+});

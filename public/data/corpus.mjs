@@ -1,4 +1,7 @@
-export const VERIFIED_AT = '2026-10-29';
+import {extendedCorpus} from './extended-corpus.mjs';
+
+export const VERIFIED_AT = '2026-11-04';
+const INCOME_VERIFIED_AT = '2026-10-29';
 const nts='https://www.nts.go.kr/nts/cm/cntnts/cntntsView.do?';
 export const corpus = [
  {id:'rates',title:'종합소득세 기본세율',publisher:'국세청',kind:'신고 안내',period:'2025년 귀속',years:[2025],url:nts+'cntntsId=7667&mi=2227',tags:['세율','누진공제','세금','과세표준','산출세액','얼마'],
@@ -21,7 +24,7 @@ export const corpus = [
   summary:'사업소득의 필요경비는 해당 기간 수입에 대응하는 일반적으로 통상적인 비용을 기준으로 합니다. 구체적인 계산 사항은 시행령도 함께 검토해야 합니다.',
   detail:'수록 원문은 2026년 시행 조문입니다. 2025년 귀속 질의답변 검색에서는 제외하며, 과거 거래에 적용할 때에는 당시 시행 법령과 부칙을 별도로 확인해야 합니다.',
   check:'적용 귀속연도와 당시 시행 조문, 해당 비용의 사실관계, 시행령을 함께 확인하세요.'}
-].map(x=>({...x,verifiedAt:VERIFIED_AT,referenceOnly:false}));
+].map(x=>({...x,tax:'income',verifiedAt:INCOME_VERIFIED_AT,referenceOnly:false}));
 
 const historical = [
  {id:'nts-2015-0179',title:'강사의 대학원 등록금과 필요경비',number:'서면-2015-소득-0179',issuedAt:'2015-05-07',publisher:'국세청',kind:'질의회신',url:'https://taxlaw.nts.go.kr/qt/USEQTA002P.do?ntstDcmId=010000000000174940',
@@ -69,7 +72,7 @@ const historical = [
   detail:'초과인출금은 가사 유용 외에 사업 관련 지출로도 생길 수 있다는 점을 고려했습니다. 해당 규정을 추정규정으로 해석하여, 규정을 무효라고 본 원심을 파기환송했습니다.',
   check:'사업용 자산·부채와 초과인출금 산정, 차입금 사용처, 사업관련성 증빙, 해당 기간 법령을 확인하세요.',
   limitations:'규정의 유효성과 추정 해석에 관한 판결입니다. 해당 이자가 언제나 공제되거나 언제나 불인정된다는 자동 판정에 쓰지 마세요.',sourceLocation:'판시사항·판결요지, 이유 1 가·나 및 결론'}
-].map(x=>({...x,referenceOnly:true,years:[],period:`${x.kind==='판례'?'선고':'회신'} ${x.issuedAt} · 역사적 참고 사례`,verifiedAt:VERIFIED_AT}));
-corpus.push(...historical);
+].map(x=>({...x,tax:'income',referenceOnly:true,years:[],period:`${x.kind==='판례'?'선고':'회신'} ${x.issuedAt} · 역사적 참고 사례`,verifiedAt:INCOME_VERIFIED_AT}));
+corpus.push(...historical,...extendedCorpus);
 
-export const corpusStats = Object.freeze({total:corpus.length,rulings:historical.filter(d=>d.kind==='질의회신').length,cases:historical.filter(d=>d.kind==='판례').length});
+export const corpusStats = Object.freeze({total:corpus.length,rulings:corpus.filter(d=>d.kind==='질의회신').length,cases:corpus.filter(d=>d.kind==='판례').length});

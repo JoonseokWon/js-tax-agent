@@ -12,3 +12,21 @@
 @media(max-width:680px){.ai-settings{padding:12px 14px;font-size:11px}.ai-status-row{align-items:flex-start;gap:8px}.ai-status-row>span{padding-top:10px}.ask-buttons{max-width:230px}.ai-points{font-size:13px}.library-filter{gap:8px}.library-filter>span{font-size:11px}.document-number{font-size:11px!important}.source-details{padding:7px 10px}.source-details p{font-size:12px}}
 @media(prefers-reduced-motion:no-preference){.button,nav a,.suggestions button{transition:background .16s,border-color .16s}.answer-card,.result-summary{animation:appear .2s ease-out}@keyframes appear{from{opacity:.3;transform:translateY(5px)}to{opacity:1;transform:none}}}
 @media(max-width:680px){.form-footer{flex-wrap:wrap}.form-footer>.text-button{flex:none;white-space:nowrap}.ask-buttons{display:grid;grid-template-columns:1fr;width:100%;max-width:none}}
+
+.tax-picker{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;margin-bottom:16px;font-size:13px}
+.tax-picker label{font-weight:650}
+.tax-picker select{min-height:44px;border:1px solid #d6dfed;border-radius:9px;padding:8px 12px;background:#fff;color:var(--ink);font:inherit}
+.tax-picker>span{color:var(--muted);font-size:12px}
+.compare-picker{margin-top:4px}
+.law-review{margin-top:12px}
+.law-review ol{padding-inline-start:22px;margin:0}
+.law-review li{padding-block:8px}
+.law-review li p{margin:6px 0}
+.law-review .tax-picker{margin:10px 0 4px}
+.law-review input[type=date]{min-height:44px;max-width:100%;padding:6px 10px;border:1px solid #d6dfed;border-radius:9px;color:var(--ink);background:#fff}
+.bar-row progress{width:100%;height:20px;border:0;border-radius:6px;overflow:hidden;background:#f0f3f9;accent-color:#2670eb}
+.bar-row progress::-webkit-progress-bar{background:#f0f3f9}
+.bar-row progress::-webkit-progress-value{background:#2670eb;border-radius:6px}
+.bar-row:first-child progress::-webkit-progress-value{background:#8fb7f7}
+.result-panel th,.result-panel td{white-space:normal;overflow-wrap:anywhere}
+@media(max-width:420px){.result-panel th,.result-panel td{padding-inline:5px}.tax-picker>span{flex-basis:100%}}

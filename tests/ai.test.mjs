@@ -52,3 +52,19 @@ test('원시 제공자 오류와 키가 브라우저 응답에 포함되지 않�
  const handler=createApiHandler({apiKey:key,fetchImpl:async()=>new Response(JSON.stringify({error:{message:key+' confidential'}}),{status:401})});
  const response=await handler(post('/api/ask',{question:'세율을 알려주세요',mode:'ai'}));const text=await response.text();assert.equal(response.status,502);assert.ok(!text.includes(key)&&!text.includes('confidential'));assert.equal(JSON.parse(text).code,'AI_AUTH');
 });
+test('추가 세목의 생성 요청에는 해당 세목 근거만 보내고 불일치 시 호출하지 않음',async()=>{
+ const sent=[];
+ const handler=createApiHandler({apiKey:key,fetchImpl:async(url,options)=>{
+  const payload=JSON.parse(options.body),context=JSON.parse(payload.input);
+  sent.push(context);
+  return providerResponse(result([context.context[0].id]));
+ }});
+ for(const [tax,question,name,prefix] of [['corporate','기본세율을 알려주세요','법인세','corp-'],['vat','매입세액 공제 조건은?','부가가치세','vat-']]){
+  const response=await handler(post('/api/ask',{question,tax,mode:'ai'}));
+  assert.equal(response.status,200);assert.equal((await response.json()).tax,tax);
+  const context=sent.at(-1);assert.equal(context.tax,name);assert.equal(context.calculationYear,2026);
+  assert.ok(context.context.length&&context.context.every(d=>d.id.startsWith(prefix)));
+ }
+ const mismatch=await handler(post('/api/ask',{question:'법인세 세율',tax:'vat',mode:'ai'}));
+ assert.equal((await mismatch.json()).status,'insufficient');assert.equal(sent.length,2);
+});

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {taxFromBase,compareScenarios,calculateScenario,parseAmount} from '../public/lib/tax.mjs';
+import {taxFromBase,compareScenarios,calculateScenario,parseAmount,calculateCorporate,calculateVat,compareTax} from '../public/lib/tax.mjs';
 // 별도의 누진 구간 적분으로 확인. 누진공제 공식을 그대로 복제하지 않음.
 function marginalReference(base){let left=base,last=0,total=0;for(const[upper,rate]of [[14000000,6],[50000000,15],[88000000,24],[150000000,35],[300000000,38],[500000000,40],[1000000000,42],[Infinity,45]]){const portion=Math.max(0,Math.min(left,upper-last));total+=portion*rate;left-=portion;last=upper;if(left<=0)break;}return Math.floor(total/100);}
 test('모든 누진세 경계의 전후와 고액에서 독립 계산식과 일치',()=>{
@@ -16,4 +16,26 @@ test('음수·빈 값·문자·소수·비정상 객체·상한 초과 금액 �
 test('미지원 연도·결손금의 잘못된 계산을 거부',()=>{
  assert.throws(()=>calculateScenario({year:2026,revenue:100,expenses:0,deductions:0}),/2025/);
  assert.throws(()=>calculateScenario({year:2025,revenue:100,expenses:101,deductions:0}),/결손금/);
+});
+test('2026년 법인세 누진구간 경계 양쪽의 세액',()=>{
+ const cases=[[0,0,0],[200000000,10,20000000],[200000100,20,20000020],
+  [20000000000,20,3980000000],[20000000100,22,3980000022],
+  [300000000000,22,65580000000],[300000000100,25,65580000025]];
+ for(const [base,rate,tax] of cases){
+  const actual=calculateCorporate({year:2026,base});
+  assert.equal(actual.rate,rate);assert.equal(actual.tax,tax);
+ }
+ assert.throws(()=>calculateCorporate({year:2025,base:0}),/2026/);
+ assert.throws(()=>calculateCorporate({year:2026,base:-1}),/원 단위/);
+});
+test('일반과세자 부가세는 매입세액이 크면 환급 방향이고 차이를 부호로 비교',()=>{
+ const a={year:2026,sales:100000000,inputTax:7000000};
+ const b={...a,inputTax:12000000};
+ const result=compareTax('vat',a,b);
+ assert.deepEqual([result.baseline.outputTax,result.baseline.tax,result.alternative.tax,result.difference],
+  [10000000,3000000,-2000000,-5000000]);
+ assert.equal(calculateVat({year:2026,sales:123,inputTax:12}).tax,0);
+ assert.throws(()=>calculateVat({...a,year:2027}),/2026/);
+ assert.throws(()=>calculateVat({...a,inputTax:'1.5'}),/원 단위/);
+ assert.throws(()=>compareTax('unknown',a,b),/세목/);
 });

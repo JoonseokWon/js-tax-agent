@@ -1,10 +1,10 @@
 {
   "name": "js-tax-agent",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@11.25.0",
-  "description": "공식 근거로 살펴보는 종합소득세와 시나리오 비교",
+  "description": "종합소득세·법인세·부가가치세의 공식 근거 검색과 시나리오 비교",
   "engines": { "node": ">=22.9.0" },
   "scripts": {
     "start": "node --env-file-if-exists=.env server.mjs",

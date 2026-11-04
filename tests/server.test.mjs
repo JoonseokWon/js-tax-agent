@@ -10,7 +10,7 @@ test('화면·모듈은 제공하고 비밀/상위 경로는 차단',async t=>{
  const response=await fetch(base+'/');assert.equal(response.status,200);assert.match(await response.text(),/JS Tax Agent/);assert.match(response.headers.get('content-security-policy'),/frame-ancestors 'none'/);
  for(const route of ['/app.mjs','/lib/rag.mjs','/data/corpus.mjs','/style.css'])assert.equal((await fetch(base+route)).status,200,route);
  for(const route of ['/.env','/server.mjs','/docs/spec.md','/%2eenv','/..%5c.env'])assert.equal((await fetch(base+route)).status,404,route);
- const status=await(await fetch(base+'/runtime.json')).json();assert.equal(status.aiAvailable,false);assert.equal(status.version,'0.2.0');assert.equal(status.corpus.total,11);assert.equal(status.lastVerifiedAt,null);
+ const status=await(await fetch(base+'/runtime.json')).json();assert.equal(status.aiAvailable,false);assert.equal(status.version,'0.3.0');assert.deepEqual(status.corpus,{total:21,rulings:5,cases:5});assert.equal(status.lastVerifiedAt,null);
 });
 test('JSON 입력 오류·미설정 AI·비정상 출처 처리',async t=>{
  const base=await withServer(t,{apiKey:'',model:''});const post=body=>fetch(base+'/api/ask',{method:'POST',headers:{'Content-Type':'application/json'},body});
